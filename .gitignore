@@ -1,5 +1,6 @@
 .vs
 setting.json
+twitter_api.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
