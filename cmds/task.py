@@ -33,7 +33,7 @@ class Task(Cog_Extension):
             self.channel = self.bot.get_channel(782232918512107542) #default channel
             self.bot_ch = self.bot.get_channel(782232918512107542)
             self.last_st_t = dt.datetime.utcnow()
-            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-7, seconds=-SLEEP_TIME*5)
+            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-1, seconds=-SLEEP_TIME*5)
             self.cur_st_t = dt.datetime.utcnow() 
             self.cur_ed_t = dt.datetime.utcnow()
             self.history = dict()
@@ -85,9 +85,9 @@ class Task(Cog_Extension):
                         
                         # Embed setting 
                         embed=discord.Embed(url=tweet_url, description=tweet['text'], color=tg['embed_color'], timestamp=tweet_time)
-                        embed.set_author(name=f"{tg['name']} ( @{tg['account_id']})", url=t_url+tg['account_id'])#, icon_url=tg['icon_url'])
-                        embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
-                        embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
+                        #embed.set_author(name=f"{tg['name']} ( @{tg['account_id']})", url=t_url+tg['account_id'])#, icon_url=tg['icon_url'])
+                        #embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
+                        #embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
                         
                         
                         await self.bot_ch.send(f"{role.mention} {tg['nickname']} 發了一篇推特:\n{tweet_url}", embed=embed)
@@ -104,9 +104,12 @@ class Task(Cog_Extension):
     
     @commands.command()
     async def set_channel(self, ctx, ch: int):
-        self.channel = self.bot.get_channel(ch)
-        print(f"I'll start to forward tweet to channel: #{self.channel}")
-        await ctx.send(f'Starting to forward tweet to channel: {self.channel.mention}')
+        try:
+            self.channel = self.bot.get_channel(ch)
+            print(f"I'll start to forward tweet to channel: #{self.channel}")
+            await ctx.send(f'Starting to forward tweet to channel: {self.channel.mention}')
+        except AttributeError:
+            await ctx.send(f'Failed to forward tweet to channel: {self.channel.mention}, check channel ID')
         
 
 
@@ -126,11 +129,11 @@ def get_tweets(target:dict, start_t, end_t):
     payload = jdata['payload']
     headers= jdata['headers']
 
-    try:
-        res = requests.request("GET", url, headers=headers, data = payload)
-    except Exception as e:
-        print("EXCEPTION in get_tweets():", e)
+    res = requests.request("GET", url, headers=headers, data = payload)
+    if res.status_code != requests.codes.ok:
+        print("request fail, status_code: ", res.status_code)
         print("get_tweets : url=", url)
+        
 
     jdata = res.json()
     return jdata
