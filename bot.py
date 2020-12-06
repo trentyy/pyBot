@@ -38,3 +38,4 @@ for filename in os.listdir('./cmds'):
 #    print(user)
 if __name__ == '__main__':
     bot.run(jdata['TOKEN'])
+
