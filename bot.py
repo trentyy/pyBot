@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import json
-import os
+import os, socket
 
 with open('setting.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
@@ -10,7 +10,7 @@ bot = commands.Bot(command_prefix= '>>')
 
 @bot.event
 async def on_ready():
-    print("Bot is online")
+    print(f"Bot host by `{socket.gethostname()}` is online")
     channel = bot.get_channel(int(jdata['chennel_bot-playground']))
     await channel.send("As your service!")
 
