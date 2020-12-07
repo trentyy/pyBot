@@ -6,7 +6,7 @@ import json, datetime
 with open('setting.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
 
-class  Event(Cog_Extension):
+class  RoleMamager(Cog_Extension):
     @commands.Cog.listener()
     async def on_message(self, msg):
         if msg.content == 'Server-BOT':
@@ -17,7 +17,10 @@ class  Event(Cog_Extension):
         if data.message_id == 782810110237868074:
             guild = self.bot.get_guild(data.guild_id)
             flag = False
-            if str(data.emoji) == '💫' :           # 華月
+            if str(data.emoji) == '🐑':           # 公式羊
+                role = guild.get_role(785051702176645130)
+                flag = True
+            elif str(data.emoji) == '💫' :           # 華月
                 role = guild.get_role(782624351676923945)
                 flag = True
             elif str(data.emoji) == '🍽️':          # 夢咲
@@ -36,7 +39,9 @@ class  Event(Cog_Extension):
                 print(f"add {data.member} to role: {role}")
                 channel = self.bot.get_channel(783033279166939156) # "機器人操作履歷頻道"
                 await data.member.add_roles(role)
+                await data.member.send(f"Add {data.member} to {guild}'s role: {role}")
                 await channel.send(f"Add {data.member} to role: {role}")
+
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, data):
         #print(guild, role)
@@ -45,7 +50,10 @@ class  Event(Cog_Extension):
             guild = self.bot.get_guild(data.guild_id)
             user = await guild.fetch_member(data.user_id)
             flag = False
-            if str(data.emoji) == '💫':           # 華月
+            if str(data.emoji) == '🐑':           # 公式羊
+                role = guild.get_role(785051702176645130)
+                flag = True
+            elif str(data.emoji) == '💫':           # 華月
                 role = guild.get_role(782624351676923945)
                 flag = True
             elif str(data.emoji) == '🍽️':          # 夢咲
@@ -60,11 +68,13 @@ class  Event(Cog_Extension):
             elif str(data.emoji) == '🎐':          # 海月
                 role = guild.get_role(782625222968344597)
                 flag = True
+            
             if (flag): 
                 print(f"remove {user} from role: {role}")
                 channel = self.bot.get_channel(783033279166939156) # "機器人操作履歷頻道"
                 await user.remove_roles(role)
+                await user.send(f"Remove {user} from {guild}'s role: {role}")
                 await channel.send(f"Remove {user} from role: {role}")
 
 def setup(bot):
-    bot.add_cog(Event(bot))
+    bot.add_cog(RoleMamager(bot))

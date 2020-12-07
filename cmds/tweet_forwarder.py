@@ -20,24 +20,26 @@ SLEEP_TIME = 2*60
 
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
-class Task(Cog_Extension):
+class TweetForwarder(Cog_Extension):
     def __init__(self, bot):
         self.bot = bot
         async def interval():
             await self.bot.wait_until_ready()
 
             #self.bot = bot
-            print("task - interval loaded: bot=", bot)
+            print("TweetForwarder - interval loaded: bot=", bot)
             self.guild =  bot.get_guild(782232756238549032)
             print("interval: self.guild=", self.guild)
-            self.channel = self.bot.get_channel(782232918512107542) #default channel
+            self.channel = self.bot.get_channel(twitter_setting['dc_ch_id_general']) #default channel
+            self.reply_ch = self.bot.get_channel(twitter_setting['dc_ch_id_replay'])
             self.bot_ch = self.bot.get_channel(782232918512107542)
             self.last_st_t = dt.datetime.utcnow()
-            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-1, seconds=-SLEEP_TIME*5)
+            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-0, seconds=-SLEEP_TIME*5)
             self.cur_st_t = dt.datetime.utcnow() 
             self.cur_ed_t = dt.datetime.utcnow()
-            self.history = dict()
             self.count = int(0)
+            self.new_t_all = int(0)     # all new tweet number
+            self.new_t_vis = int(0)     # visiable new tweet number
 
             targets = proproduction, mikuru, mia, chiroru, isumi, yuru
 
@@ -51,7 +53,7 @@ class Task(Cog_Extension):
 
                 # set search time
                 self.cur_st_t = self.last_ed_t
-                self.cur_ed_t = dt.datetime.utcnow() + dt.timedelta(days=0, hours=0, minutes=0, seconds=-10)
+                self.cur_ed_t = dt.datetime.utcnow() + dt.timedelta(days=0, hours=0, minutes=0, seconds=-15)
                 # get embed message and send to speticular channel
                 for tg in targets:
                     role = self.guild.get_role(int(tg['dc_role']))
@@ -64,13 +66,6 @@ class Task(Cog_Extension):
                         tweet = tweets['data'][i]
                         # skip situation
                         ## need to add a whitelist
-                        
-                        if int(tweet['id']) in self.history.keys():
-                            print(f'tweet id {tweet["id"]} already posted, hostory: {self.history.keys()}')
-                            continue
-                        else:
-                            # add tweet to history
-                            self.history.update({int(tweet['id']): tweet['created_at']})
 
                         # found tweet by target[account_id], and get tweet url=twitter_url+target['account_id']+'/status/'+tweet_id
                         tweet_url = t_url + tg['account_id'] + '/status/' + tweet['id']
@@ -80,24 +75,41 @@ class Task(Cog_Extension):
                         except Exception as e:
                             print("Exception in tweet time transform: ", e)
                             tweet_time = dt.datetime.now()
-
-
                         
                         # Embed setting 
                         embed=discord.Embed(url=tweet_url, description=tweet['text'], color=tg['embed_color'], timestamp=tweet_time)
-                        #embed.set_author(name=f"{tg['name']} ( @{tg['account_id']})", url=t_url+tg['account_id'])#, icon_url=tg['icon_url'])
-                        #embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
-                        #embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
+                        embed.set_author(name=f"{tg['name']} ( @{tg['account_id']})", url=t_url+tg['account_id'])#, icon_url=tg['icon_url'])
+                        embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
+                        embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
                         
+                        # invisiable forward to bot_ch
                         
-                        await self.bot_ch.send(f"{role.mention} {tg['nickname']} 發了一篇推特:\n{tweet_url}", embed=embed)
+                        self.new_t_all += 1
+                        # bot_ch 監控
+                        await self.bot_ch.send(f"{tg['nickname']} 發/回覆了一篇推特:\n{tweet_url}", embed=embed)
+                        print(f'tweet id {tweet["id"]} from {tg["account_id"]} forward to {self.bot_ch.name}')
+
+                        # tweet in reply to user
                         if "in_reply_to_user_id" in tweet.keys():
-                            print(f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {bot_ch.mention}')
+                            await self.reply_ch.send(f"{tg['nickname']} just reply a tweet:\n{tweet_url}")
+                            print(f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {self.reply_ch.name}')
                             continue
-                        await self.channel.send(f"{role.mention} {tg['nickname']} just tweeted this:\n{tweet_url}")
+
+                        # visiable forward to channel
+                        self.new_t_vis += 1
+                        
+                        await self.channel.send(f"{role.mention} {tg['nickname']} just post a tweet:\n{tweet_url}")
+                        print(f'{tg["account_id"]} post a tweet, message forward to {self.channel.name}')
+
                 # update last search range by current search range
                 self.last_st_t = self.cur_st_t
                 self.last_ed_t = self.cur_ed_t
+                
+                # print how many tweet are detect
+                print("detect new tweet: {}, visible forward: {}".format(self.new_t_all, self.new_t_vis))
+                self.new_t_all = int(0)
+                self.new_t_vis = int(0) 
+
                 # wait
                 await asyncio.sleep(SLEEP_TIME) # unit: second
         self.bg_task = self.bot.loop.create_task(interval())
@@ -133,6 +145,7 @@ def get_tweets(target:dict, start_t, end_t):
     if res.status_code != requests.codes.ok:
         print("request fail, status_code: ", res.status_code)
         print("get_tweets : url=", url)
+        json.dumps(res.text, indent=4)
         
 
     jdata = res.json()
@@ -140,4 +153,4 @@ def get_tweets(target:dict, start_t, end_t):
 
 
 def setup(bot):
-    bot.add_cog(Task(bot))
+    bot.add_cog(TweetForwarder(bot))
