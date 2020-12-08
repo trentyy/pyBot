@@ -130,6 +130,7 @@ class TweetForwarder(Cog_Extension):
 
                         await self.channel.send(msg)
                         print(debug_msg)
+                    await asyncio.sleep(1) 
 
                 # update last search range by current search range
                 self.last_st_t = self.cur_st_t
