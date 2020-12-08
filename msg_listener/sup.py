@@ -4,7 +4,7 @@ from core.classes import Cog_Extension
 
 import random
 
-class React(Cog_Extension)
+class Sup(Cog_Extension)
     @commands.Cog.listener()
     async def on_message(self, msg):
         if '怕.jpg' in msg.content:
@@ -20,4 +20,4 @@ class React(Cog_Extension)
         elif  '修但' in msg.content:
             await  msg.channel.send('https://memes.tw/wtf/356325')
 def setup(bot):
-    bot.add_cog(React(bot))
+    bot.add_cog(Sup(bot))

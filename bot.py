@@ -45,6 +45,9 @@ async def reload(ctx, extension):
 for filename in os.listdir('./cmds'):
     if filename.endswith('.py'):
         bot.load_extension(f'cmds.{filename[:-3]}')
+for filename in os.listdir('./msg_listener'):
+    if filename.endswith('.py'):
+        bot.load_extension(f'msg_listener.{filename[:-3]}')
 #@commands.Cog.listener()
 #async def on_reaction_add(self, reaction, user):
 #    print(reaction)
