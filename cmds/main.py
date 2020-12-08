@@ -10,32 +10,45 @@ class Main(Cog_Extension):
         await ctx.send(f'{round(self.bot.latency*1000)} (ms)')
     @commands.command()
     async def botsay(self, ctx, *, msg):
-        await ctx.message.delete()
-        await ctx.send(msg)
+        print(ctx.author.roles)
+        if (ctx.guild.get_role(785503910818218025) in ctx.author.roles):
+            await ctx.message.delete()
+            await ctx.send(msg)
+        else:
+            await ctx.send("你誰啊?")
     @commands.command()
     async def curtime(self, ctx):
         await ctx.send(dt.datetime.now())
     @commands.command()
     async def purge(self, ctx, num:int=1):
-        await ctx.channel.purge(limit=num+1)
+        if ctx.author.permissions_in(ctx.channel).manage_messages:
+            await ctx.channel.purge(limit=num+1)
+        else:
+            msg =   f"您沒有在 {ctx.channel} `管理訊息`的權限\n"+\
+                    f"You don't have the permission to `Manage Message` at {ctx.channel}"
+            await ctx.channel.send(msg)
     @commands.command()
-    async def purgetoday(self, ctx, 
-                        h: int= dt.datetime.now().hour,
-                        m: int= dt.datetime.now().minute, 
-                        s: int= dt.datetime.now().second):
-        today = dt.datetime.today() - dt.timedelta(hours=-24)
-        # from utc
-        tz_from = dt.timezone(dt.timedelta(0))
-        # to utc+8
-        tz_to = dt.timezone(dt.timedelta(hours=8))
-        # from local time
-        time_loc = today.replace(hour=h, minute=m, second=s, tzinfo=tz_to)
-        # to utc time, tzinfo　need to remove
-        time_utc = time.astimezone(tz_from).replace(tzinfo=None)
+    async def purgefromDT(self, ctx, 
+                        Y: int= dt.datetime.now().year,
+                        M: int= dt.datetime.now().month, 
+                        D: int= dt.datetime.now().day,
+                        *hms: int):
+        if ctx.author.permissions_in(ctx.channel).manage_messages:
+            time = dt.datetime(Y, M, D, *hms)
+            # from utc
+            tz_from = dt.timezone(dt.timedelta(0))
+            # to utc+8
+            tz_to = dt.timezone(dt.timedelta(hours=8))
+            # from local time
+            time_loc = time.replace(tzinfo=tz_to)
+            # to utc time, tzinfo　need to remove
+            time_utc = time_loc.astimezone(tz_from).replace(tzinfo=None)
 
-        #print("local time: ", time)
-        #print("utc time: ", time_utc)
-        await ctx.channel.purge(after=time_utc)
+            await ctx.channel.purge(after=time_utc)
+        else:
+            msg =   f"您沒有在 {ctx.channel} `管理訊息`的權限\n"+\
+                    f"You don't have the permission to `Manage Message` at {ctx.channel}"
+            await ctx.channel.send(msg)
 
 def setup(bot):
     bot.add_cog(Main(bot))

@@ -1,5 +1,10 @@
 # pyBot
 
+## 2020/12/9 update
+1. bot command now is only avalible for Administrator
+2. main cog add permission check
+3. fix some bug in tweet_forwarder, by check request status.code and exception
+
 ## 2020/12/8 update
 1. 去除存放已轉送推文之history設定
 2. New feature: role distribute bot now can send message to the person who get/lose role

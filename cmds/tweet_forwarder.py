@@ -1,8 +1,15 @@
 import discord
 from discord.ext import commands
 from core.classes import Cog_Extension
-import json, asyncio, requests, socket
+import json, asyncio, requests, urllib3, socket
 import datetime as dt
+
+DEBUG = False
+DEBUG_NO_REPLY = False
+DEBUG_NO_BOT_PG = False
+if DEBUG: DEBUG_HOUR = 6
+else: DEBUG_HOUR = 0
+DEBUG_LOG = "./tweet_forwarder.log"
 
 # load data and set variables
 with open('twitter_forward_setting.json','r', encoding='utf8') as f:
@@ -17,48 +24,61 @@ chiroru = twitter_setting['chiroru']
 isumi = twitter_setting['isumi']
 yuru = twitter_setting['yuru']
 SLEEP_TIME = 2*60
+TARGETS = proproduction, mikuru, mia, chiroru, isumi, yuru      # here is TARGETS list
 
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
 class TweetForwarder(Cog_Extension):
     def __init__(self, bot):
         self.bot = bot
+
         async def interval():
             await self.bot.wait_until_ready()
 
-            #self.bot = bot
-            print("TweetForwarder - interval loaded: bot=", bot)
             self.guild =  bot.get_guild(782232756238549032)
-            print("interval: self.guild=", self.guild)
+            print("TweetForwarder: working at guild=", self.guild)
+            self.bot_pg = self.bot.get_channel(782232918512107542)
+            
             self.channel = self.bot.get_channel(twitter_setting['dc_ch_id_general']) #default channel
             self.reply_ch = self.bot.get_channel(twitter_setting['dc_ch_id_replay'])
-            self.bot_ch = self.bot.get_channel(782232918512107542)
+
+            if DEBUG:
+                self.channel = self.bot_pg
+                self.reply_ch = self.bot_pg
+
             self.last_st_t = dt.datetime.utcnow()
-            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-0, seconds=-SLEEP_TIME*5)
+            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-DEBUG_HOUR, seconds=-SLEEP_TIME*5)
             self.cur_st_t = dt.datetime.utcnow() 
             self.cur_ed_t = dt.datetime.utcnow()
             self.count = int(0)
             self.new_t_all = int(0)     # all new tweet number
-            self.new_t_vis = int(0)     # visiable new tweet number
+            self.new_t_vis = int(0)     # visiable new tweet number    
 
-            targets = proproduction, mikuru, mia, chiroru, isumi, yuru
+            
 
             while not self.bot.is_closed():
                 self.count += 1
-                print("interval: loop time:", self.count)
-                # send message to bot_ch show that it's alive
+                print(f"{dt.datetime.now()} interval: loop time: {self.count}")
+
+                # send message to bot_pg show that it's alive
                 curTime = dt.datetime.now().replace(microsecond=0).isoformat(" ")
-                await self.bot_ch.send(f'Bot host by `{socket.gethostname()}` is alive. {curTime}')
+                msg = f'Bot host by `{socket.gethostname()}` is alive. {curTime}'
+                await self.bot_pg.send(msg)
                 
 
                 # set search time
                 self.cur_st_t = self.last_ed_t
                 self.cur_ed_t = dt.datetime.utcnow() + dt.timedelta(days=0, hours=0, minutes=0, seconds=-15)
                 # get embed message and send to speticular channel
-                for tg in targets:
+                for tg in TARGETS:
                     role = self.guild.get_role(int(tg['dc_role']))
                     
-                    tweets = get_tweets(tg, self.cur_st_t, self.cur_ed_t)
+                    try:
+                        tweets = await self.get_tweets(tg, self.cur_st_t, self.cur_ed_t)
+                    except Exception as e:
+                        bug_msg = f"Failed to get tweets from: {tg['account_id']}"
+                        print(bug_msg)
+                        await self.bot_pg.send(bug_msg)
                     
                     # if no tweet in time interval, continue
 
@@ -82,31 +102,42 @@ class TweetForwarder(Cog_Extension):
                         embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
                         embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
                         
-                        # invisiable forward to bot_ch
+                        # invisiable forward to bot_pg
                         
                         self.new_t_all += 1
-                        # bot_ch 監控
-                        await self.bot_ch.send(f"{tg['nickname']} 發/回覆了一篇推特:\n{tweet_url}", embed=embed)
-                        print(f'tweet id {tweet["id"]} from {tg["account_id"]} forward to {self.bot_ch.name}')
+                        # bot_pg 監控
+                        if DEBUG_NO_BOT_PG==False:
+                            msg = "TO BOT CH:" + f"{tg['nickname']} 發/回覆了一篇推特:\n{tweet_url}"
+                            debug_msg = f'tweet id {tweet["id"]} from {tg["account_id"]} forward to {self.bot_pg.name}'
+                            await self.bot_pg.send(msg, embed=embed)
+                            print(debug_msg)
 
                         # tweet in reply to user
                         if "in_reply_to_user_id" in tweet.keys():
-                            await self.reply_ch.send(f"{tg['nickname']} just reply a tweet:\n{tweet_url}")
-                            print(f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {self.reply_ch.name}')
+                            msg = f"{tg['nickname']} just reply a tweet:\n{tweet_url}"
+                            debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {self.reply_ch.name}'
+
+                            if DEBUG_NO_REPLY:
+                                continue
+                            await self.reply_ch.send(msg)
+                            print(debug_msg)
                             continue
 
                         # visiable forward to channel
                         self.new_t_vis += 1
-                        
-                        await self.channel.send(f"{role.mention} {tg['nickname']} just post a tweet:\n{tweet_url}")
-                        print(f'{tg["account_id"]} post a tweet, message forward to {self.channel.name}')
+                        msg = f"{role.mention} {tg['nickname']} just post a tweet:\n{tweet_url}"
+                        debug_msg = f'{tg["account_id"]} post a tweet, message forward to {self.channel.name}'
+
+                        await self.channel.send(msg)
+                        print(debug_msg)
 
                 # update last search range by current search range
                 self.last_st_t = self.cur_st_t
                 self.last_ed_t = self.cur_ed_t
                 
                 # print how many tweet are detect
-                print("detect new tweet: {}, visible forward: {}".format(self.new_t_all, self.new_t_vis))
+                debug_msg = "detect new tweet: {}, visible forward: {}".format(self.new_t_all, self.new_t_vis)
+                print(debug_msg)
                 self.new_t_all = int(0)
                 self.new_t_vis = int(0) 
 
@@ -124,32 +155,45 @@ class TweetForwarder(Cog_Extension):
             await ctx.send(f'Failed to forward tweet to channel: {self.channel.mention}, check channel ID')
         
 
-
-def get_tweets(target:dict, start_t, end_t):
-    with open('twitter_api.json', 'r', encoding='utf8') as f:
-        jdata = json.load(f)
-        f.close()
-    # set time, assume both of them is utc time
-    
-    start_time = start_t.isoformat('T') + 'Z'
-    end_time = end_t.isoformat('T') + 'Z'
-    # set for request
-    url = "https://api.twitter.com/2/tweets/search/recent?tweet.fields="+\
-        "attachments,created_at,entities&expansions=in_reply_to_user_id&media.fields=&user.fields="+\
-        f"&query=(from:{target['account_id']})"+\
-        f"&start_time={start_time}&end_time={end_time}"
-    payload = jdata['payload']
-    headers= jdata['headers']
-
-    res = requests.request("GET", url, headers=headers, data = payload)
-    if res.status_code != requests.codes.ok:
-        print("request fail, status_code: ", res.status_code)
-        print("get_tweets : url=", url)
-        json.dumps(res.text, indent=4)
+    async def get_tweets(self, target:dict, start_t, end_t):
+        with open('twitter_api.json', 'r', encoding='utf8') as f:
+            jdata = json.load(f)
+            f.close()
+        # set time, assume both of them is utc time
         
+        start_time = start_t.isoformat('T') + 'Z'
+        end_time = end_t.isoformat('T') + 'Z'
+        # set for request
+        url = "https://api.twitter.com/2/tweets/search/recent?tweet.fields="+\
+            "attachments,created_at,entities&expansions=in_reply_to_user_id&media.fields=&user.fields="+\
+            f"&query=(from:{target['account_id']})"+\
+            f"&start_time={start_time}&end_time={end_time}"
+        payload = jdata['payload']
+        headers= jdata['headers']
 
-    jdata = res.json()
-    return jdata
+        count = 0
+        while (count < 5):
+            try:
+                res = requests.request("GET", url, headers=headers, data = payload)
+            except Exception as e:
+                print("Except:", e)
+                count += 1
+
+            if res.status_code == requests.codes.ok:
+                break
+            else:
+                print("FAIL to request, res.status_code=", res.status_code)
+            await asyncio.sleep(5)
+        
+        if res.status_code != requests.codes.ok:
+            print("request fail, status_code: ", res.status_code)
+            print("get_tweets : url=", url)
+            await self.bot_pg.send("request fail, status_code: ", res.status_code)
+            await self.bot_pg.send("get_tweets : url=", url)
+            
+
+        jdata = res.json()
+        return jdata
 
 
 def setup(bot):

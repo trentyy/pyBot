@@ -14,20 +14,33 @@ async def on_ready():
     channel = bot.get_channel(int(jdata['chennel_bot-playground']))
     await channel.send("As your service!")
 
+
+# Core的功能僅開放guild_permissions.administrator使用
 @bot.command()
 async def load(ctx, extension):
-    bot.unload_extension(f'cmds.{extension}')
-    await ctx.send(f'Loaded extension: {extension}.')
+    if ctx.author.guild_permissions.administrator:
+        bot.unload_extension(f'cmds.{extension}')
+        await ctx.send(f'Loaded extension: {extension}.')
+    else:
+        msg = "You aren't the `Administrator`"
+        await ctx.send(msg)
 
 @bot.command()
 async def unload(ctx, extension):
-    bot.unload_extension(f'cmds.{extension}')
-    await ctx.send(f'Unloaded extension: {extension}.')
-
+    if ctx.author.guild_permissions.administrator:
+        bot.unload_extension(f'cmds.{extension}')
+        await ctx.send(f'Unloaded extension: {extension}.')
+    else:
+        msg = "You aren't the `Administrator`"
+        await ctx.send(msg)
 @bot.command()
 async def reload(ctx, extension):
-    bot.reload_extension(f'cmds.{extension}')
-    await ctx.send(f'Reloaded extension: {extension}.')
+    if ctx.author.guild_permissions.administrator:
+        bot.reload_extension(f'cmds.{extension}')
+        await ctx.send(f'Reloaded extension: {extension}.')
+    else:
+        msg = "You aren't the `Administrator`"
+        await ctx.send(msg)
 
 for filename in os.listdir('./cmds'):
     if filename.endswith('.py'):
@@ -38,4 +51,3 @@ for filename in os.listdir('./cmds'):
 #    print(user)
 if __name__ == '__main__':
     bot.run(jdata['TOKEN'])
-
