@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import json
 import os, socket
+import datetime as dt
 
 with open('setting.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
@@ -13,7 +14,6 @@ async def on_ready():
     print(f"Bot host by `{socket.gethostname()}` is online")
     channel = bot.get_channel(int(jdata['chennel_bot-playground']))
     await channel.send("As your service!")
-
 
 # Core的功能僅開放guild_permissions.administrator使用
 @bot.command()

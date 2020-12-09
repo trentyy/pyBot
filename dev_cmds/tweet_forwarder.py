@@ -47,7 +47,7 @@ class TweetForwarder(Cog_Extension):
                 self.reply_ch = self.bot_pg
 
             self.last_st_t = dt.datetime.utcnow()
-            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-DEBUG_HOUR, seconds=-SLEEP_TIME*5)
+            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-DEBUG_HOUR,  seconds=-SLEEP_TIME*5)
             self.cur_st_t = dt.datetime.utcnow() 
             self.cur_ed_t = dt.datetime.utcnow()
             self.count = int(0)

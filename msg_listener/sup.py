@@ -4,7 +4,7 @@ from core.classes import Cog_Extension
 
 import random
 
-class Sup(Cog_Extension)
+class Sup(Cog_Extension):
     @commands.Cog.listener()
     async def on_message(self, msg):
         if '怕.jpg' in msg.content:
