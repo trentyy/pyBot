@@ -19,5 +19,7 @@ class Sup(Cog_Extension):
             await  msg.channel.send('https://i.imgur.com/TsPkY4Q.gif')
         elif  '修但' in msg.content:
             await  msg.channel.send('https://memes.tw/wtf/356325')
+        elif '蘿莉' in msg.content or 'FBI' in msg.content or 'lolicon' in msg.content:
+            await  msg.channel.send('https://tenor.com/view/fbi-open-up-open-up-fbi-raid-gif-17397897')
 def setup(bot):
     bot.add_cog(Sup(bot))
