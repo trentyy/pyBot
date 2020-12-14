@@ -1,3 +1,4 @@
+comds/__pycache__
 test.py
 .vs
 setting.json
@@ -132,3 +133,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+cmds/__pycache__/main.cpython-38.pyc
+cmds/__pycache__/event.cpython-38.pyc
