@@ -15,6 +15,7 @@ async def on_ready():
     channel = bot.get_channel(int(jdata['chennel_bot-playground']))
     await channel.send("As your service!")
 
+
 # Core的功能僅開放guild_permissions.administrator使用
 @bot.command()
 async def load(ctx, extension):
