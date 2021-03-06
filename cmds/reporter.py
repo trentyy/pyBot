@@ -5,7 +5,7 @@ import json, asyncio, requests, urllib3, socket
 import datetime as dt
 
 
-SLEEP_TIME = 5*60
+SLEEP_TIME = 60*60
 class TweetForwarder(Cog_Extension):
     def __init__(self, bot):
         self.bot = bot
