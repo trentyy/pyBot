@@ -9,23 +9,23 @@
         "name": "【公式】プロプロプロダクション",
         "icon_url": "https://pbs.twimg.com/profile_images/1328649863874060290/LQqec0uO_400x400.jpg",
         "dc_role": "785051702176645130", 
-        "nickname": "プロ羊 :sheep:",
+        "nickname": "公式羊: The sheep:",
         "embed_color": 16777215
     },
     "mikuru": {
         "id": "1305447572874514432",
         "account_id": "kadukimikuru",
         "name": "華月みくる🌕💫プロプロ1期生",
-        "icon_url": "https://pbs.twimg.com/profile_images/1306143753116110848/01qhcT_s_400x400.jpg",
+        "icon_url": "https://pbs.twimg.com/profile_images/1359091797830422530/1oOYfgzo_400x400.jpg",
         "dc_role": "782624351676923945", 
-        "nickname": "野菜番長",
+        "nickname": "みくる",
         "embed_color": 14575727
     },
     "mia": {
         "id": "1304127298178670592",
         "account_id": "yumesakimia",
         "name": "夢咲ミア🌙🍽プロプロ1期生",
-        "icon_url": "https://pbs.twimg.com/profile_images/1311600364064370688/luznb0hE_400x400.jpg",
+        "icon_url": "https://pbs.twimg.com/profile_images/1346292997621567488/SdlmCG6d_400x400.jpg",
         "dc_role": "782623972344463412", 
         "nickname": "ミアちゃん",
         "embed_color": 16496125
@@ -34,7 +34,7 @@
         "id": "1306912591868907522",
         "account_id": "amachiroru",
         "name": "甘ノ星ちろる 🍬 プロプロ一期生",
-        "icon_url": "https://pbs.twimg.com/profile_images/1319831007369949184/RW6M2_Rq_400x400.jpg",
+        "icon_url": "https://pbs.twimg.com/profile_images/1362829092425359361/H-1FHFoQ_400x400.jpg",
         "dc_role": "782624609882079250", 
         "nickname": "Crazy girl",
         "embed_color": 16248703
@@ -55,7 +55,7 @@
         "name": "海月ゆる🎐🌙プロプロ一期生",
         "icon_url": "https://pbs.twimg.com/profile_images/1333309955756048384/SqH0hhYD_400x400.jpg",
         "dc_role": "782625222968344597", 
-        "nickname": "有隻水母",
+        "nickname": "ゆるちゃん",
         "embed_color": 9564155
     }
 }

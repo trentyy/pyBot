@@ -7,8 +7,8 @@ import datetime as dt
 DEBUG = False
 DEBUG_NO_REPLY = False
 DEBUG_NO_BOT_PG = False
-if DEBUG: DEBUG_HOUR = 6
-else: DEBUG_HOUR = 0
+DEBUG_HOUR = 0
+if DEBUG: DEBUG_HOUR = 3
 DEBUG_LOG = "./tweet_forwarder.log"
 
 # load data and set variables
@@ -23,7 +23,10 @@ mia = twitter_setting['mia']
 chiroru = twitter_setting['chiroru']
 isumi = twitter_setting['isumi']
 yuru = twitter_setting['yuru']
-SLEEP_TIME = 2*60
+
+allow_reply_id = [proproduction[id], mikuru[id], mia[id], chiroru[id], isumi[id], yuru[id]]
+
+SLEEP_TIME = 30
 TARGETS = proproduction, mikuru, mia, chiroru, isumi, yuru      # here is TARGETS list
 
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
@@ -61,10 +64,11 @@ class TweetForwarder(Cog_Extension):
                 print(f"{dt.datetime.now()} interval: loop time: {self.count}")
 
                 # send message to bot_pg show that it's alive
+                """
                 curTime = dt.datetime.now().replace(microsecond=0).isoformat(" ")
                 msg = f'Bot host by `{socket.gethostname()}` is alive. {curTime}'
                 await self.bot_pg.send(msg)
-                
+                """
 
                 # set search time
                 self.cur_st_t = self.last_ed_t
@@ -137,7 +141,8 @@ class TweetForwarder(Cog_Extension):
                 self.last_ed_t = self.cur_ed_t
                 
                 # print how many tweet are detect
-                debug_msg = "detect new tweet: {}, visible forward: {}".format(self.new_t_all, self.new_t_vis)
+                debug_msg = "from {} to {}, I detect new tweet: {}, visible forward: {}".format(
+                    self.cur_st_t, self.cur_ed_t, self.new_t_all, self.new_t_vis)
                 print(debug_msg)
                 self.new_t_all = int(0)
                 self.new_t_vis = int(0) 
