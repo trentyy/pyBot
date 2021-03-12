@@ -27,7 +27,9 @@ class  RoleMamager(Cog_Extension):
                         '🍽️': guild.get_role(782623972344463412),
                         '🍬': guild.get_role(782624609882079250),
                         '🦇': guild.get_role(782624818280661012),
-                        '🎐': guild.get_role(782625222968344597)}
+                        '🎐': guild.get_role(782625222968344597),
+                        '💎': guild.get_role(817743717217206273),
+                        '🌼': guild.get_role(817743846514884649)}
 
             if str(data.emoji) in target.keys():
                 role = target[str(data.emoji)]
@@ -49,7 +51,9 @@ class  RoleMamager(Cog_Extension):
                       '🍽️': guild.get_role(790095058971000832),
                       '🍬': guild.get_role(790095064835293225),
                       '🦇': guild.get_role(790095067716648961),
-                      '🎐': guild.get_role(790095069997826049)}
+                      '🎐': guild.get_role(790095069997826049),
+                      '💎': guild.get_role(820013990217252895),
+                      '🌼': guild.get_role(820013965827637319)}
 
             if str(data.emoji) in target.keys():
                 role = target[str(data.emoji)]
@@ -78,6 +82,7 @@ class  RoleMamager(Cog_Extension):
             if str(data.emoji) == '🐑':           # 公式羊
                 role = guild.get_role(785051702176645130)
                 flag = True
+            # generation-1
             elif str(data.emoji) == '💫':           # 華月
                 role = guild.get_role(782624351676923945)
                 flag = True
@@ -92,6 +97,13 @@ class  RoleMamager(Cog_Extension):
                 flag = True
             elif str(data.emoji) == '🎐':          # 海月
                 role = guild.get_role(782625222968344597)
+                flag = True
+            # generation-2
+            elif str(data.emoji) == '💎':         # 恋乃夜
+                role = guild.get_role(817743717217206273)
+                flag = True
+            elif str(data.emoji) == '🌼':          # 花雲
+                role = guild.get_role(817743846514884649)
                 flag = True
             
             if (flag): 

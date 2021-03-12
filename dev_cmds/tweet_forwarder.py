@@ -24,10 +24,14 @@ chiroru = twitter_setting['chiroru']
 isumi = twitter_setting['isumi']
 yuru = twitter_setting['yuru']
 
-allow_reply_id = [proproduction[id], mikuru[id], mia[id], chiroru[id], isumi[id], yuru[id]]
+TARGETS = proproduction, mikuru, mia, chiroru, isumi, yuru      # here is TARGETS list
+TARGETS_ACCOUNT_ID =  [x['account_id'] for x in TARGETS]
+TARGETS_ID = [x['id'] for x in TARGETS]
+
+#TARGETS_ROLES = [self.guild.get_role(int(x['dc_role'])) for x in TARGETS]
 
 SLEEP_TIME = 30
-TARGETS = proproduction, mikuru, mia, chiroru, isumi, yuru      # here is TARGETS list
+
 
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
@@ -89,6 +93,7 @@ class TweetForwarder(Cog_Extension):
                     for i in range(tweets['meta']['result_count']):
                         tweet = tweets['data'][i]
                         # skip situation
+
                         ## need to add a whitelist
 
                         # found tweet by target[account_id], and get tweet url=twitter_url+target['account_id']+'/status/'+tweet_id
@@ -119,12 +124,19 @@ class TweetForwarder(Cog_Extension):
                         # tweet in reply to user
                         if "in_reply_to_user_id" in tweet.keys():
                             msg = f"{tg['nickname']} just reply a tweet:\n{tweet_url}"
-                            debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {self.reply_ch.name}'
+                            
 
                             if DEBUG_NO_REPLY:
                                 continue
-                            await self.reply_ch.send(msg)
-                            print(debug_msg)
+                            if (tweet["in_reply_to_user_id"] in TARGETS_ID):
+                                msg = f"{tg['nickname']} tete!\n{tweet_url}"
+                                debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]} in TARGETS_ID , message forward to {self.channel.name}'
+                                await self.channel.send(msg)
+                                print(debug_msg)
+                            else:
+                                debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]}, message forward to {self.reply_ch.name}'
+                                await self.reply_ch.send(msg)
+                                print(debug_msg)
                             continue
 
                         # visiable forward to channel
@@ -170,8 +182,11 @@ class TweetForwarder(Cog_Extension):
         start_time = start_t.isoformat('T') + 'Z'
         end_time = end_t.isoformat('T') + 'Z'
         # set for request
-        url = "https://api.twitter.com/2/tweets/search/recent?tweet.fields="+\
-            "attachments,created_at,entities&expansions=in_reply_to_user_id&media.fields=&user.fields="+\
+        url = "https://api.twitter.com/2/tweets/search/recent?"+\
+            "tweet.fields=attachments,created_at,entities"+\
+            "&max_results=50"+\
+            "&expansions=author_id,in_reply_to_user_id"+\
+            "&media.fields=&user.fields="+\
             f"&query=(from:{target['account_id']})"+\
             f"&start_time={start_time}&end_time={end_time}"
         payload = jdata['payload']
