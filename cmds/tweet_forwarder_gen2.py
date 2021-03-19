@@ -17,15 +17,24 @@ with open('twitter_forward_setting.json','r', encoding='utf8') as f:
     f.close()
 t_url = twitter_setting['twitter_url']
 twitter_icon_url = twitter_setting['twitter_icon_url']
+
+# gen1 with staff
+proproduction = twitter_setting['proproduction']
+mikuru = twitter_setting['mikuru']
+mia = twitter_setting['mia']
+chiroru = twitter_setting['chiroru']
+isumi = twitter_setting['isumi']
+yuru = twitter_setting['yuru']
+# gen2
 koinoya = twitter_setting['koinoya']
 hanakumo = twitter_setting['hanakumo']
 
-BOX_MEMBER = proproduction, mikuru, mia, chiroru, isumi, yuru
+BOX_MEMBER = (proproduction, 
+        mikuru, mia, chiroru, isumi, yuru, 
+        koinoya, hanakumo)
 TARGETS = koinoya, hanakumo      # here is TARGETS list
 TARGETS_ACCOUNT_ID =  [x['account_id'] for x in TARGETS]
-BOX_MEMBER_ID = [x['id'] for x in twitter_setting]
-
-#TARGETS_ROLES = [self.guild.get_role(int(x['dc_role'])) for x in TARGETS]
+BOX_MEMBER_ID = [x['id'] for x in BOX_MEMBER]
 
 SLEEP_TIME = 5
 
