@@ -20,10 +20,10 @@ twitter_icon_url = twitter_setting['twitter_icon_url']
 koinoya = twitter_setting['koinoya']
 hanakumo = twitter_setting['hanakumo']
 
-
+BOX_MEMBER = proproduction, mikuru, mia, chiroru, isumi, yuru
 TARGETS = koinoya, hanakumo      # here is TARGETS list
 TARGETS_ACCOUNT_ID =  [x['account_id'] for x in TARGETS]
-TARGETS_ID = [x['id'] for x in TARGETS]
+BOX_MEMBER_ID = [x['id'] for x in twitter_setting]
 
 #TARGETS_ROLES = [self.guild.get_role(int(x['dc_role'])) for x in TARGETS]
 
@@ -126,11 +126,11 @@ class TweetForwarderGen2(Cog_Extension):
 
                             if DEBUG_NO_REPLY:
                                 continue
-                            if (tweet["in_reply_to_user_id"] in TARGETS_ID):
+                            if (tweet["in_reply_to_user_id"] in BOX_MEMBER_ID):
                                 msg = f"{tg['nickname']} tete!\n{tweet_url}"
                                 if (tweet["in_reply_to_user_id"]==tg["account_id"]):
                                     msg = f"{tg['nickname']} reply to herself\n{tweet_url}"
-                                debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]} in TARGETS_ID , message forward to {self.channel.name}'
+                                debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]} in BOX_MEMBER_ID , message forward to {self.channel.name}'
                                 await self.channel.send(msg)
                                 print(debug_msg)
                             else:
