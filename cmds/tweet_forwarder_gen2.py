@@ -8,7 +8,7 @@ DEBUG = False
 DEBUG_NO_REPLY = False
 DEBUG_NO_BOT_PG = False
 DEBUG_HOUR = 0
-if DEBUG: DEBUG_HOUR = 3
+if DEBUG: DEBUG_HOUR = 1 
 DEBUG_LOG = "./tweet_forwarder.log"
 
 # load data and set variables
@@ -17,15 +17,11 @@ with open('twitter_forward_setting.json','r', encoding='utf8') as f:
     f.close()
 t_url = twitter_setting['twitter_url']
 twitter_icon_url = twitter_setting['twitter_icon_url']
-proproduction = twitter_setting['proproduction']
-mikuru = twitter_setting['mikuru']
-mia = twitter_setting['mia']
-chiroru = twitter_setting['chiroru']
-isumi = twitter_setting['isumi']
-yuru = twitter_setting['yuru']
+koinoya = twitter_setting['koinoya']
+hanakumo = twitter_setting['hanakumo']
 
 
-TARGETS = proproduction, mikuru, mia, chiroru, isumi, yuru      # here is TARGETS list
+TARGETS = koinoya, hanakumo      # here is TARGETS list
 TARGETS_ACCOUNT_ID =  [x['account_id'] for x in TARGETS]
 TARGETS_ID = [x['id'] for x in TARGETS]
 
@@ -36,7 +32,7 @@ SLEEP_TIME = 5
 
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
-class TweetForwarder(Cog_Extension):
+class TweetForwarderGen2(Cog_Extension):
     def __init__(self, bot):
         self.bot = bot
 
@@ -48,14 +44,14 @@ class TweetForwarder(Cog_Extension):
             self.bot_pg = self.bot.get_channel(782232918512107542)
             
             self.channel = self.bot.get_channel(twitter_setting['dc_ch_id_general']) #default channel
-            self.reply_ch = self.bot.get_channel(twitter_setting['dc_ch_id_replay'])
+            self.reply_ch = self.bot.get_channel(twitter_setting['dc_ch_id_reply'])
 
             if DEBUG:
                 self.channel = self.bot_pg
                 self.reply_ch = self.bot_pg
 
             self.last_st_t = dt.datetime.utcnow()
-            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-DEBUG_HOUR,  seconds=-SLEEP_TIME*5)
+            self.last_ed_t = dt.datetime.utcnow() + dt.timedelta(hours=-DEBUG_HOUR-1,  seconds=-SLEEP_TIME*5)
             self.cur_st_t = dt.datetime.utcnow() 
             self.cur_ed_t = dt.datetime.utcnow()
             self.count = int(0)
@@ -80,6 +76,7 @@ class TweetForwarder(Cog_Extension):
                 self.cur_ed_t = dt.datetime.utcnow() + dt.timedelta(days=0, hours=0, minutes=0, seconds=-15)
                 # get embed message and send to speticular channel
                 for tg in TARGETS:
+                    self.channel = self.bot.get_channel(int(tg['twi_fw_ch']))
                     role = self.guild.get_role(int(tg['dc_role']))
                     
                     try:
@@ -131,6 +128,8 @@ class TweetForwarder(Cog_Extension):
                                 continue
                             if (tweet["in_reply_to_user_id"] in TARGETS_ID):
                                 msg = f"{tg['nickname']} tete!\n{tweet_url}"
+                                if (tweet["in_reply_to_user_id"]==tg["account_id"]):
+                                    msg = f"{tg['nickname']} reply to herself\n{tweet_url}"
                                 debug_msg = f'{tg["account_id"]} reply to id: {tweet["in_reply_to_user_id"]} in TARGETS_ID , message forward to {self.channel.name}'
                                 await self.channel.send(msg)
                                 print(debug_msg)
@@ -143,9 +142,8 @@ class TweetForwarder(Cog_Extension):
                         # visiable forward to channel
                         self.new_t_vis += 1
                         msg = f"{role.mention} {tg['nickname']} just post a tweet:\n{tweet_url}"
-                        debug_msg = f'{tg["account_id"]} post a tweet, message forward to {self.channel.name}'
-
-                        await self.channel.send(msg)
+                        debug_msg = f'{tg["account_id"]} post a tweet, message forward to {tg["twi_fw_ch"]}'
+                        await self.bot.get_channel(int(tg['twi_fw_ch'])).send(msg)
                         print(debug_msg)
                     await asyncio.sleep(1) 
 
@@ -154,7 +152,7 @@ class TweetForwarder(Cog_Extension):
                 self.last_ed_t = self.cur_ed_t
                 
                 # print how many tweet are detect
-                debug_msg = "from {} to {}, I detect new tweet: {}, visible forward: {}".format(
+                debug_msg = "{} -> {}, TwitterForwarderGen2 detect new tweet: {}, visible forward: {}".format(
                     self.cur_st_t, self.cur_ed_t, self.new_t_all, self.new_t_vis)
                 print(debug_msg)
                 self.new_t_all = int(0)
@@ -164,15 +162,6 @@ class TweetForwarder(Cog_Extension):
                 await asyncio.sleep(SLEEP_TIME) # unit: second
         self.bg_task = self.bot.loop.create_task(interval())
     
-    @commands.command()
-    async def set_channel(self, ctx, ch: int):
-        try:
-            self.channel = self.bot.get_channel(ch)
-            print(f"I'll start to forward tweet to channel: #{self.channel}")
-            await ctx.send(f'Starting to forward tweet to channel: {self.channel.mention}')
-        except AttributeError:
-            await ctx.send(f'Failed to forward tweet to channel: {self.channel.mention}, check channel ID')
-        
 
     async def get_tweets(self, target:dict, start_t, end_t):
         with open('twitter_api.json', 'r', encoding='utf8') as f:
@@ -219,4 +208,4 @@ class TweetForwarder(Cog_Extension):
 
 
 def setup(bot):
-    bot.add_cog(TweetForwarder(bot))
+    bot.add_cog(TweetForwarderGen2(bot))

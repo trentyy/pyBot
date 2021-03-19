@@ -1,6 +1,6 @@
 {
     "dc_ch_id_general": 785534975436914749,
-    "dc_ch_id_replay": 785533561389711371,
+    "dc_ch_id_reply": 785533561389711371,
     "twitter_url": "https://twitter.com/",
     "twitter_icon_url": "https://pbs.twimg.com/profile_images/1308010958862905345/-SGZioPb_400x400.jpg",
     "proproduction": {
@@ -63,8 +63,10 @@
         "account_id": "koinoya_mai",
         "name": "恋乃夜まい / プロプロ２期生",
         "icon_url": "https://pbs.twimg.com/profile_images/1370277609095897088/8-R3o78Z_400x400.jpg",
-        "dc_role": "817743717217206273", 
-        "nickname": "恋乃夜",
+        "dc_role": "817743717217206273",
+        "twi_fw_ch": "817753816518754305",
+        "yt_fw_ch": "",
+        "nickname": "まい　ちゃん",
         "embed_color": 9583988
     },
     "hanakumo": {
@@ -72,8 +74,10 @@
         "account_id": "hanakumo_rin",
         "name": "花雲 りん / プロプロ2期生",
         "icon_url": "https://pbs.twimg.com/profile_images/1367763755589767175/P-k97-SE_400x400.jpg",
-        "dc_role": "817743846514884649", 
-        "nickname": "花雲 りん",
+        "dc_role": "817743846514884649",
+        "twi_fw_ch": "822052510234837052",
+        "yt_fw_ch": "",
+        "nickname": "りん　ちゃん",
         "embed_color": 14932942
     }
     

@@ -6,7 +6,7 @@ import json, datetime
 with open('setting.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
 
-class  RoleMamager(Cog_Extension):
+class  RoleManager(Cog_Extension):
     @commands.Cog.listener()
     async def on_message(self, msg):
         if msg.content == 'Server-BOT':
@@ -114,4 +114,4 @@ class  RoleMamager(Cog_Extension):
                 await channel.send(f"Remove {user} from role: {role}")
 
 def setup(bot):
-    bot.add_cog(RoleMamager(bot))
+    bot.add_cog(RoleManager(bot))

@@ -58,6 +58,7 @@ if DEBUG==False:
     for filename in os.listdir('./msg_listener'):
         if filename.endswith('.py'):
             bot.load_extension(f'msg_listener.{filename[:-3]}')
+
 else:
     for filename in os.listdir('./dev_cmds'):
         if filename.endswith('.py'):
