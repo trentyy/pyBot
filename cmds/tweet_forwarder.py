@@ -30,19 +30,22 @@ hanakumo = twitter_setting['hanakumo']
 BOX_MEMBER = (proproduction, 
         mikuru, mia, chiroru, isumi, yuru, 
         koinoya, hanakumo)
-TARGETS = koinoya, hanakumo      # here is TARGETS list
+TARGETS_GEN1 = mikuru, mia, chiroru, isumi, yuru
+TARGETS_GEN2 = koinoya, hanakumo      # here is TARGETS list
 BOX_MEMBER_ID = [x['id'] for x in BOX_MEMBER]
 SLEEP_TIME = 10
 
-
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
-class TweetForwarderGen2(Cog_Extension):
+
+
+class TweetForwarder(Cog_Extension):
     def is_reply_relative(in_reply_to_user_id):
         return (in_reply_to_user_id in BOX_MEMBER_ID)
 
     def __init__(self, bot):
         self.bot = bot
+        self.TARGETS = TARGETS_GEN2
         
         async def interval():
             await self.default_satting(bot)
@@ -57,7 +60,7 @@ class TweetForwarderGen2(Cog_Extension):
                 self.cur_st_t = self.last_ed_t
                 self.cur_ed_t = dt.datetime.utcnow() + dt.timedelta(days=0, hours=0, minutes=0, seconds=-15)
                 # get embed message and send to speticular channel
-                for tg in TARGETS:
+                for tg in self.TARGETS:
                     self.channel = self.bot.get_channel(int(tg['twi_fw_ch']))
                     role = self.guild.get_role(int(tg['dc_role']))
                     
@@ -222,4 +225,4 @@ class TweetForwarderGen2(Cog_Extension):
 
 
 def setup(bot):
-    bot.add_cog(TweetForwarderGen2(bot))
+    bot.add_cog(TweetForwarder(bot))
