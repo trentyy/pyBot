@@ -4,10 +4,8 @@ from core.classes import Cog_Extension
 import json, asyncio, requests, urllib3, socket
 import datetime as dt
 
-DEBUG = False
-DEBUG_HOUR = 0
-if DEBUG: DEBUG_HOUR = 4
-DEBUG_LOG = "./tweet_forwarder.log"
+DEBUG=False
+DEBUG_HOUR=3
 
 # load data and set variables
 with open('twitter_forward_setting.json','r', encoding='utf8') as f:
@@ -38,11 +36,7 @@ SLEEP_TIME = 10
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
 
-
-class TweetForwarder(Cog_Extension):
-    def is_reply_relative(in_reply_to_user_id):
-        return (in_reply_to_user_id in BOX_MEMBER_ID)
-
+class TweetForwarder(Cog_Extension, ):
     def __init__(self, bot):
         self.bot = bot
         self.TARGETS = TARGETS_GEN2
@@ -103,8 +97,7 @@ class TweetForwarder(Cog_Extension):
                             
                             msg_V = "just reply a tweet:"
                             debug_msg += f'reply to id: {tweet["in_reply_to_user_id"]}, '
-
-                            if (not is_reply_relative(tweet["in_reply_to_user_id"])):
+                            if (not (tweet["in_reply_to_user_id"] in BOX_MEMBER_ID)):
                                 debug_msg += f'message forward to {self.reply_ch.name}'
                                 if (DEBUG):
                                     await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
