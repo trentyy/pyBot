@@ -5,7 +5,7 @@ import json, asyncio, requests, urllib3, socket
 import datetime as dt
 
 DEBUG=False
-DEBUG_HOUR=3
+DEBUG_HOUR=0
 
 # load data and set variables
 with open('twitter_forward_setting.json','r', encoding='utf8') as f:
@@ -36,7 +36,7 @@ SLEEP_TIME = 10
 with open('twitter_api.json', mode='r', encoding='utf8') as jfile:
     jdata = json.load(jfile)
 
-class TweetForwarder(Cog_Extension, ):
+class TweetForwarder(Cog_Extension):
     def __init__(self, bot):
         self.bot = bot
         self.TARGETS = TARGETS_GEN2
@@ -58,12 +58,15 @@ class TweetForwarder(Cog_Extension, ):
                     self.channel = self.bot.get_channel(int(tg['twi_fw_ch']))
                     role = self.guild.get_role(int(tg['dc_role']))
                     
-                    try:
-                        tweets = await self.get_tweets(tg, self.cur_st_t, self.cur_ed_t)
-                    except Exception as e:
-                        bug_msg = f"Failed to get tweets from: {tg['username']}"
-                        print(bug_msg)
-                        await self.debug_ch.send(bug_msg)
+
+                    res = await self.get_tweets(tg, self.cur_st_t, self.cur_ed_t)
+                    if (res.status_code!=200): 
+                        print(f"fail to get_tweets from {tg['username']}")
+                        continue
+                    tweets = res.json()
+
+                    
+
                     
                     # if no tweet in time interval, continue
 
@@ -197,7 +200,7 @@ class TweetForwarder(Cog_Extension, ):
             try:
                 res = requests.request("GET", url, headers=headers, data = payload)
             except Exception as e:
-                print("Except:", e)
+                print("Except: ", e, "status_code: ", res.status_code, "count: ", count)
                 count += 1
 
             if res.status_code == requests.codes.ok:
@@ -213,8 +216,8 @@ class TweetForwarder(Cog_Extension, ):
             await self.debug_ch.send("get_tweets : url=", url)
             
 
-        jdata = res.json()
-        return jdata
+        
+        return res
 
 
 def setup(bot):

@@ -20,9 +20,6 @@ async def on_ready():
     channel = bot.get_channel(int(jdata['chennel_bot-playground']))
     await channel.send(f"`{socket.gethostname()}` As your service!")
 
-@bot.command()
-async def ping(self, ctx):
-    await ctx.send(f'{round(self.bot.latency*1000)} (ms)')
 # Core的功能僅開放guild_permissions.administrator使用
 @bot.command()
 async def load(ctx, extension):
