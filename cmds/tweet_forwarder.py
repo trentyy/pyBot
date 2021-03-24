@@ -6,6 +6,7 @@ import datetime as dt
 
 DEBUG=False
 DEBUG_HOUR=0
+if DEBUG: DEBUG_HOUR=3
 
 # load data and set variables
 with open('twitter_forward_setting.json','r', encoding='utf8') as f:
@@ -90,12 +91,14 @@ class TweetForwarder(Cog_Extension):
                         """
                         
                         self.new_t_all += 1
+                        msg_mention = f"{role.mention} "
                         msg_S = f"{tg['nickname']} "
                         msg_V = ""
                         msg_O = ""
                         msg_Link = f"\n{tweet_url}"
                         debug_msg = f'{tg["username"]} '
-                                                # tweet in reply to user
+                        
+                        # tweet in reply to user
                         if "in_reply_to_user_id" in tweet.keys():
                             
                             msg_V = "just reply a tweet:"
@@ -114,31 +117,30 @@ class TweetForwarder(Cog_Extension):
                                     msg_V = "reply to herself"
                                 debug_msg += f'is relative, message forward to {self.channel.name}'
                                 if (DEBUG):
-                                    await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
+                                    await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                                 else:
-                                    await self.channel.send(msg_S + msg_V + msg_O + msg_Link)
+                                    await self.channel.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                                 print(debug_msg)
                                 continue
                         elif (tweet["text"][:2] == "RT"):
                             msg_V = "just retweet this:"
                             debug_msg += f'retweet, message forward to {self.channel.name}'
                             if (DEBUG):
-                                await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
+                                await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                             else:
-                                await self.channel.send(msg_S + msg_V + msg_O + msg_Link)
+                                await self.channel.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                             print(debug_msg)
                             continue
 
                         # visiable forward to channel
                         self.new_t_vis += 1
-                        msg_mention = f"{role.mention} "
                         msg_V = "just post a tweet:"
                         debug_msg += f'post a tweet, message forward to {tg["twi_fw_ch"]}'
                         if (DEBUG):
-                            await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
+                            await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                         else:
                             await self.bot.get_channel(int(tg['twi_fw_ch'])).send(
-                                msg_S + msg_V + msg_O + msg_Link)
+                                msg_mention + msg_S + msg_V + msg_O + msg_Link)
                         print(debug_msg)
                     await asyncio.sleep(1) 
 
