@@ -56,11 +56,16 @@ class TweetForwarder(Cog_Extension):
         
         async def interval():
             await self.default_satting(bot)
+            await self.guild.get
             while not self.bot.is_closed():
                 self.new_t_all = int(0)     # all new tweet number
                 self.new_t_vis = int(0)
                 self.count += 1
-                print(f"{dt.datetime.now()} interval: loop time: {self.count}")
+                now = dt.datetime.now()
+                print(f"{now} interval: loop time: {self.count}")
+
+                # report update time
+                self.report_msg.edit(content=self.report_content+f"*{now.strftime('%m-%d %H:%M')}*")
 
 
                 # set search time
@@ -189,6 +194,12 @@ class TweetForwarder(Cog_Extension):
         self.cur_st_t = dt.datetime.utcnow() 
         self.cur_ed_t = dt.datetime.utcnow()
         self.count = int(0)
+
+        # for report update
+        self.report_ch = self.bot.get_channel(814226297931694101)
+        self.report_msg = await channel.fetch_message(829113456195797092)
+        self.report_content = "Tweet forwarder update at: "
+
 
     async def get_tweets(self, target:dict, start_t, end_t):
         with open('twitter_api.json', 'r', encoding='utf8') as f:
