@@ -77,8 +77,12 @@ class  YTForwarder(Cog_Extension):
                     live_videos.pop(videoId)
                 continue
             elif (liveBroadcastContent == "upcoming"):
+                print("liveBroadcastContent == upcoming")
                 upcoming_videos[videoId] = scheduledStartTime
             elif (liveBroadcastContent == "live"):
+                print("liveBroadcastContent == live")
+                if (videoId in upcoming_videos.keys()):
+                    print(upcoming_videos.pop(videoId))
                 live_videos[videoId] = scheduledStartTime
         return upcoming_videos, live_videos
     async def updateMsg(self, target_msg: str, videosDict: dict, msg: discord.Message, last_search):
@@ -130,6 +134,8 @@ class  YTForwarder(Cog_Extension):
 
                 result = self.ytSearchAPI()
                 self.videosListFilter(result, BOX_MEMBER_ID) # parse
+                result = self.ytSearchAPI("live")
+                self.videosListFilter(result, BOX_MEMBER_ID)
 
                 self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
                 await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming, self.upcoming_last_search)
@@ -169,6 +175,8 @@ class  YTForwarder(Cog_Extension):
                 if (sleep_minuates % 30 == 0):
                     sleep_minuates = 0
                     result = self.ytSearchAPI()
+                    self.videosListFilter(result, BOX_MEMBER_ID)
+                    result = self.ytSearchAPI("live")
                     self.videosListFilter(result, BOX_MEMBER_ID)
                     print("get new list at: ", datetime.now())
                 self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
