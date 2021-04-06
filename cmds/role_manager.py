@@ -28,8 +28,8 @@ class  RoleManager(Cog_Extension):
                         '🍬': guild.get_role(782624609882079250),
                         '🦇': guild.get_role(782624818280661012),
                         '🎐': guild.get_role(782625222968344597),
-                        '💎': guild.get_role(817743717217206273),
-                        '🌼': guild.get_role(817743846514884649)}
+                        '💗': guild.get_role(817743717217206273),
+                        '🌺': guild.get_role(817743846514884649)}
 
             if str(data.emoji) in target.keys():
                 role = target[str(data.emoji)]
@@ -52,8 +52,8 @@ class  RoleManager(Cog_Extension):
                       '🍬': guild.get_role(790095064835293225),
                       '🦇': guild.get_role(790095067716648961),
                       '🎐': guild.get_role(790095069997826049),
-                      '💎': guild.get_role(820013990217252895),
-                      '🌼': guild.get_role(820013965827637319)}
+                      '💗': guild.get_role(820013990217252895),
+                      '🌺': guild.get_role(820013965827637319)}
 
             if str(data.emoji) in target.keys():
                 role = target[str(data.emoji)]
@@ -99,10 +99,10 @@ class  RoleManager(Cog_Extension):
                 role = guild.get_role(782625222968344597)
                 flag = True
             # generation-2
-            elif str(data.emoji) == '💎':         # 恋乃夜
+            elif str(data.emoji) == '💗':         # 恋乃夜
                 role = guild.get_role(817743717217206273)
                 flag = True
-            elif str(data.emoji) == '🌼':          # 花雲
+            elif str(data.emoji) == '🌺':          # 花雲
                 role = guild.get_role(817743846514884649)
                 flag = True
             
