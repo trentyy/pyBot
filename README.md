@@ -1,5 +1,13 @@
 # pyBot
 
+## 2021/4/6 update
+1. yt waiting room
+2. update role manager for propro gen 2 
+
+**next to do:**
+* make waiting room can send message to target channel
+* establish a database for tweet forwarder or yt forwarder
+
 ## 2020/12/9 update
 1. bot command now is only avalible for Administrator
 2. main cog add permission check
@@ -11,11 +19,6 @@
 3. New feature: now tweet forwarding bot can send tweet to it's channel, send reply tweet to another channel.
 
 
-
-## next to do:
-2. 由於服務設於樹梅派上，需要提供將結果&錯誤印出，或是匯入檔案的選項(可考慮兩者一起)
-3. 於自定義embed中新增圖片
-4. make a bot can help user sending meme accroading to he/she's message
 
 
 ## 考慮中功能：
