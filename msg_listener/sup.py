@@ -19,7 +19,7 @@ class Sup(Cog_Extension):
             await  msg.channel.send('https://i.imgur.com/TsPkY4Q.gif')
         elif  '修但' in msg.content:
             await  msg.channel.send('https://memes.tw/wtf/356325')
-        elif '蘿莉' in msg.content or 'FBI' in msg.content or 'lolicon' in msg.content:
+        elif '蘿莉控' in msg.content or 'FBI open up' in msg.content:
             await  msg.channel.send('https://tenor.com/view/fbi-open-up-open-up-fbi-raid-gif-17397897')
         elif '看了三小' in msg.content:
             await  msg.channel.send('https://c2.staticflickr.com/6/5647/23875668111_df9d520c4a_b.jpg')

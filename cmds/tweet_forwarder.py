@@ -25,12 +25,13 @@ yuru = twitter_setting['yuru']
 # gen2
 mai = twitter_setting['mai']
 rin = twitter_setting['rin']
-
+aoi = twitter_setting['aoi']
+momoa = twitter_setting['momoa']
 BOX_MEMBER = (proproduction, 
         mikuru, mia, chiroru, isumi, yuru, 
-        mai, rin)
+        mai, rin, aoi, momoa)
 TARGETS_GEN1 = mikuru, mia, chiroru, isumi, yuru
-TARGETS_GEN2 = mai, rin      # here is TARGETS list
+TARGETS_GEN2 = mai, rin, aoi, momoa      # here is TARGETS list
 BOX_MEMBER_ID = [x['id'] for x in BOX_MEMBER]
 SLEEP_TIME = 10
 
@@ -49,13 +50,19 @@ class TweetForwarder(Cog_Extension):
         elif ("gen2" in msg):
             self.TARGETS = TARGETS_GEN2
             await ctx.send('tweet_forwarder set target to gen2')
-        
+    @commands.command()
+    async def set_start_time(self, ctx, time):
+        try:
+            self.last_ed_t = dt.datetime.fromisoformat(time)
+            print("Start time set to: ", self.last_ed_t)
+        except Exception as e:
+            await ctx.send(e)
     def __init__(self, bot):
         self.bot = bot
         self.TARGETS = TARGETS_GEN2
         
         async def interval():
-            await self.default_satting(bot)
+            await self.default_setting(bot)
             while not self.bot.is_closed():
                 self.new_t_all = int(0)     # all new tweet number
                 self.new_t_vis = int(0)
@@ -167,14 +174,14 @@ class TweetForwarder(Cog_Extension):
                 # print how many tweet are detect
                 debug_msg = "{} -> {}, TwitterForwarderGen2 detect new tweet: {}, visible forward: {}".format(
                     self.cur_st_t, self.cur_ed_t, self.new_t_all, self.new_t_vis)
-                print(debug_msg)
+                if (self.new_t_all!=0): print(debug_msg)
 
 
                 # wait
                 await asyncio.sleep(SLEEP_TIME) # unit: second
         self.bg_task = self.bot.loop.create_task(interval())
 
-    async def default_satting(self, bot):
+    async def default_setting(self, bot):
         await bot.wait_until_ready()
 
         self.guild =  bot.get_guild(782232756238549032)

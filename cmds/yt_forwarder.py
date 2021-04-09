@@ -105,7 +105,7 @@ class  YTForwarder(Cog_Extension):
             print(content)
             last_search = datetime.now()
             await msg.edit(content=content,embed=None)
-        print(f"updateMsg() edit message {msg} to {content}")
+        print(f"updateMsg msg_id: {msg.id} to {content}")
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, data):
         
@@ -173,11 +173,11 @@ class  YTForwarder(Cog_Extension):
                 if (sleep_minuates % 2 != 0):
                     continue
                 if (sleep_minuates % 30 == 0):
-                    sleep_minuates = 0
                     result = self.ytSearchAPI()
                     self.videosListFilter(result, BOX_MEMBER_ID)
-                    result = self.ytSearchAPI("live")
-                    self.videosListFilter(result, BOX_MEMBER_ID)
+                    if (sleep_minuates == 0):
+                        result = self.ytSearchAPI("live")
+                        self.videosListFilter(result, BOX_MEMBER_ID)
                     print("get new list at: ", datetime.now())
                 self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
                 await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming, self.upcoming_last_search)
