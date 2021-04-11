@@ -245,8 +245,8 @@ class TweetForwarder(Cog_Extension):
             print("request fail, status_code: ", res.status_code)
             print("res.content: ", res.content)
             print("get_tweets : url=", url)
-            await self.debug_ch.send("request fail, status_code: ", res.status_code)
-            await self.debug_ch.send("get_tweets : url=", url)
+            await self.debug_ch.send(f"request fail, status_code: {res.status_code}" )
+            await self.debug_ch.send(f"get_tweets : url={url}")
             
 
         
