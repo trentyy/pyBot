@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 from core.classes import Cog_Extension
-import json, asyncio, requests, urllib3, socket
+import json, asyncio, sys, socket
+import requests, urllib3
 import datetime as dt
 
 DEBUG=False
@@ -103,7 +104,7 @@ class TweetForwarder(Cog_Extension):
                         try:
                             tweet_time = dt.datetime.fromisoformat(tweet_time)# + dt.timedelta(hours=8)
                         except Exception as e:
-                            print("Exception in tweet time transform: ", e)
+                            print("Exception in tweet time transform: ", e, file=sys.stderr)
                             tweet_time = dt.datetime.now()
                         """
                         # Embed setting 
@@ -231,7 +232,7 @@ class TweetForwarder(Cog_Extension):
             try:
                 res = requests.request("GET", url, headers=headers, data = payload)
             except Exception as e:
-                print("Except: ", e, "status_code: ", res.status_code, "count: ", count)
+                print("Except: ", e, "status_code: ", res.status_code, "count: ", count, file=sys.stderr)
                 count += 1
                 await asyncio.sleep(5)
 

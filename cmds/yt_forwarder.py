@@ -36,7 +36,11 @@ class  YTForwarder(Cog_Extension):
             q="プロプロ",
             type="video"
         )
-        response = request.execute()    
+        try:
+            response = request.execute()    
+        except Exception as e:
+            print(f"Except {e} at youtube api request", file=sys.stderr)
+            print(f"request: {request}", file=sys.stderr)
         self.list_search_time = datetime.now()
         return response
     def ytVideosAPI(self, videoId):
@@ -44,7 +48,11 @@ class  YTForwarder(Cog_Extension):
             part="snippet,liveStreamingDetails,status",
             id=videoId
         )
-        response = request.execute()
+        try:
+            response = request.execute()
+        except Exception as e:
+            print(f"Except {e} at youtube api request", file=sys.stderr)
+            print(f"request: {request}", file=sys.stderr)
         response = response["items"][0]
 
         liveBroadcastContent = response["snippet"]["liveBroadcastContent"]
