@@ -10,7 +10,7 @@ class  RoleManager(Cog_Extension):
     def __init__(self, bot):
         self.booting = True
         self.bot = bot
-        self.follow_roles = {
+        self.roles = {
             '🐑': (785051702176645130),
             '💫': (782624351676923945),
             '🍽️': (782623972344463412),
@@ -30,7 +30,7 @@ class  RoleManager(Cog_Extension):
             self.guild = self.bot.get_guild(782232756238549032)
             
             self.follow_roles = {}
-            for key, value in follow_roles.items():
+            for key, value in self.roles.items():
                 self.follow_roles[key] = self.guild.get_role(value)
             print(f"Cog role_manager load roles: {self.follow_roles}")
         if data.channel_id != 782790264795299870:
@@ -90,7 +90,7 @@ class  RoleManager(Cog_Extension):
             self.guild = self.bot.get_guild(782232756238549032)
             
             self.follow_roles = {}
-            for key, value in follow_roles.items():
+            for key, value in self.roles.items():
                 self.follow_roles[key] = self.guild.get_role(value)
             print(f"Cog role_manager load roles: {self.follow_roles}")
         #print(guild, role)
