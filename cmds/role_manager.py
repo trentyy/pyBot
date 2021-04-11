@@ -10,28 +10,29 @@ class  RoleManager(Cog_Extension):
     def __init__(self, bot):
         self.booting = True
         self.bot = bot
+        self.follow_roles = {
+            '🐑': (785051702176645130),
+            '💫': (782624351676923945),
+            '🍽️': (782623972344463412),
+            '🍬': (782624609882079250),
+            '🦇': (782624818280661012),
+            '🎐': (782625222968344597),
+            '💗': (817743717217206273),
+            '🌺': (817743846514884649),
+            '🐭': (830013401413058580),
+            '👑': (830013399181688892)
+        }
     
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, data):
         if self.booting:
             self.booting = False
             self.guild = self.bot.get_guild(782232756238549032)
-            follow_roles = {
-                '🐑': (785051702176645130),
-                '💫': (782624351676923945),
-                '🍽️': (782623972344463412),
-                '🍬': (782624609882079250),
-                '🦇': (782624818280661012),
-                '🎐': (782625222968344597),
-                '💗': (817743717217206273),
-                '🌺': (817743846514884649),
-                '🐭': (830013401413058580),
-                '👑': (830013399181688892)
-            }
+            
             self.follow_roles = {}
             for key, value in follow_roles.items():
                 self.follow_roles[key] = self.guild.get_role(value)
-            print(self.follow_roles)
+            print(f"Cog role_manager load roles: {self.follow_roles}")
         if data.channel_id != 782790264795299870:
             return
         
@@ -84,6 +85,14 @@ class  RoleManager(Cog_Extension):
                 await bot_ch.send(operation)
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, data):
+        if self.booting:
+            self.booting = False
+            self.guild = self.bot.get_guild(782232756238549032)
+            
+            self.follow_roles = {}
+            for key, value in follow_roles.items():
+                self.follow_roles[key] = self.guild.get_role(value)
+            print(f"Cog role_manager load roles: {self.follow_roles}")
         #print(guild, role)
         # 移除反應貼圖移除身分組
         if data.message_id == 782810110237868074:
