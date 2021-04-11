@@ -69,7 +69,6 @@ class TweetForwarder(Cog_Extension):
                 self.new_t_vis = int(0)
                 self.count += 1
                 now = dt.datetime.now()
-                print(f"{now} interval: loop time: {self.count}")
 
                 # report update time
                 await self.report_msg.edit(content=self.report_content+f"*{now.strftime('%m-%d %H:%M:%S')}*")
