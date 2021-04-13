@@ -63,6 +63,7 @@ class  YTForwarder(Cog_Extension):
         startTime = dateutil.parser.isoparse(startTime)
         return liveBroadcastContent, startTime
     def videosListFilter(self, response, member_id_dict):
+        unrelated = []
         # filter and refresh live, upcoming list
         for item in response['items']:
             if item['snippet']['channelId'] in member_id_dict.values():
@@ -75,6 +76,7 @@ class  YTForwarder(Cog_Extension):
                     self.live_videos[videoId] = datetime.utcnow()
             else:
                 unrelated.append(item)
+        print("videosListFilter: unrelated: ", unrelated)
     def videosListUpdate(self, upcoming_videos, live_videos):
         # check videos stream status
         all_videos = list(upcoming_videos.keys()) + list(live_videos.keys())
