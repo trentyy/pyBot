@@ -56,9 +56,12 @@ class  YTForwarder(Cog_Extension):
         response = response["items"][0]
 
         liveBroadcastContent = response["snippet"]["liveBroadcastContent"]
-        scheduledStartTime = response["liveStreamingDetails"]["scheduledStartTime"]
-        scheduledStartTime = dateutil.parser.isoparse(scheduledStartTime)  
-        return liveBroadcastContent, scheduledStartTime
+        if ("scheduledStartTime" in response["liveStreamingDetails"].keys()):
+            startTime = response["liveStreamingDetails"]["scheduledStartTime"]
+        else:
+            startTime = response["liveStreamingDetails"]["actualStartTime"]
+        startTime = dateutil.parser.isoparse(startTime)
+        return liveBroadcastContent, startTime
     def videosListFilter(self, response, member_id_dict):
         # filter and refresh live, upcoming list
         for item in response['items']:
