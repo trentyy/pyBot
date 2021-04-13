@@ -3,6 +3,7 @@ from discord.ext import commands
 from core.classes import Cog_Extension
 import os, json, asyncio, pymysql.cursors
 from datetime import datetime, timedelta
+import traceback, sys
 import dateutil.parser
 
 import googleapiclient.discovery
@@ -41,6 +42,7 @@ class  YTForwarder(Cog_Extension):
         except Exception as e:
             print(f"Except {e} at youtube api request", file=sys.stderr)
             print(f"request: {request}", file=sys.stderr)
+            raise e
         self.list_search_time = datetime.now()
         return response
     def ytVideosAPI(self, videoId):
@@ -53,6 +55,8 @@ class  YTForwarder(Cog_Extension):
         except Exception as e:
             print(f"Except {e} at youtube api request", file=sys.stderr)
             print(f"request: {request}", file=sys.stderr)
+            raise e
+
         response = response["items"][0]
 
         liveBroadcastContent = response["snippet"]["liveBroadcastContent"]
@@ -76,7 +80,7 @@ class  YTForwarder(Cog_Extension):
                     self.live_videos[videoId] = datetime.utcnow()
             else:
                 unrelated.append(item)
-        print("videosListFilter: unrelated: ", unrelated)
+        if (len(unrelated)): print("videosListFilter: unrelated: ", unrelated)
     def videosListUpdate(self, upcoming_videos, live_videos):
         # check videos stream status
         all_videos = list(upcoming_videos.keys()) + list(live_videos.keys())
@@ -99,26 +103,32 @@ class  YTForwarder(Cog_Extension):
                 live_videos[videoId] = scheduledStartTime
         return upcoming_videos, live_videos
     async def updateMsg(self, target_msg: str, videosDict: dict, msg: discord.Message, last_search):
-        # dealing with upcoming msg
-        time = datetime.now()
-        content = f"**{target_msg.title()} Search:**\n*Status Update at: {time.strftime('%m-%d %H:%M:%S')}*" +\
-            f"\nList Search time: {self.list_search_time.strftime('%m-%d %H:%M:%S')}"
-        no_result = "\n`There's no result`"
-        yt_head_url = "https://www.youtube.com/watch?v="
+        try:
+            # dealing with upcoming msg
+            time = datetime.now()
+            content = f"**{target_msg.title()} Search:**\n*Status Update at: {time.strftime('%m-%d %H:%M:%S')}*" +\
+                f"\nList Search time: {self.list_search_time.strftime('%m-%d %H:%M:%S')}"
+            no_result = "\n`There's no result`"
+            yt_head_url = "https://www.youtube.com/watch?v="
 
-        if (len(videosDict)==0):
-            await msg.edit(content=content+no_result,embed=None)
-        else:
-            for key, value in videosDict.items():
-                value += timedelta(hours=8)
-                time_str = value.strftime("%m-%d %H:%M") + "UTC+8"
-                content += f"\n> url: {yt_head_url}{key}" +\
-                "\n> scheduledStartTime: "+ time_str
-        
-            print(content)
-            last_search = datetime.now()
-            await msg.edit(content=content,embed=None)
-        print(f"updateMsg msg_id: {msg.id} to {content}")
+            if (len(videosDict)==0):
+                await msg.edit(content=content+no_result,embed=None)
+            else:
+                for key, value in videosDict.items():
+                    value += timedelta(hours=8)
+                    time_str = value.strftime("%m-%d %H:%M") + "UTC+8"
+                    content += f"\n> url: {yt_head_url}{key}" +\
+                    "\n> scheduledStartTime: "+ time_str
+            
+                print(content)
+                last_search = datetime.now()
+                await msg.edit(content=content,embed=None)
+            print(f"updateMsg msg_id: {msg.id} to \n{content}")
+            await self.msg_status.edit(content=f"YouTube forwarder update at: {datetime.now()}")
+        except Exception as e:
+            err_content = traceback.format_exc()
+            await self.ch_err.send(f"ERR: \n`{err_content}`")
+            print(err_content)
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, data):
         
@@ -177,6 +187,9 @@ class  YTForwarder(Cog_Extension):
             sleep_minuates = -1
             guild = self.bot.get_guild(782232756238549032)
             channel = self.bot.get_channel(823146960826662912) # waiting room channel
+            ch_status = self.bot.get_channel(814226297931694101) # update status in select ch
+            self.ch_err = self.bot.get_channel(782232918512107542)
+            self.msg_status = await ch_status.fetch_message(831658507161567282) # msg to update
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():

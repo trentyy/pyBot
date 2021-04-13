@@ -25,6 +25,8 @@ class  RoleManager(Cog_Extension):
     
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, data):
+        if data.channel_id != 782790264795299870:
+            return
         if self.booting:
             self.booting = False
             self.guild = self.bot.get_guild(782232756238549032)
@@ -33,9 +35,6 @@ class  RoleManager(Cog_Extension):
             for key, value in self.roles.items():
                 self.follow_roles[key] = self.guild.get_role(value)
             print(f"Cog role_manager load roles: {self.follow_roles}")
-        if data.channel_id != 782790264795299870:
-            return
-        
 
         # 新增反應貼圖獲取身分組-接收訊息身分組
         if data.message_id == 782810110237868074:
