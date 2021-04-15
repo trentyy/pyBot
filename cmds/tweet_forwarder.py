@@ -71,7 +71,8 @@ class TweetForwarder(Cog_Extension):
                 now = dt.datetime.now()
 
                 # report update time
-                await self.report_msg.edit(content=self.report_content+f"*{now.strftime('%m-%d %H:%M:%S')}*")
+                content=self.status_content + f"\n```{now.strftime('%m/%d %H:%M:%S')}```"
+                await self.msg_status.edit(content=content)
 
 
                 # set search time
@@ -203,8 +204,8 @@ class TweetForwarder(Cog_Extension):
 
         # for report update
         self.report_ch = self.bot.get_channel(814226297931694101)
-        self.report_msg = await self.report_ch.fetch_message(829113456195797092)
-        self.report_content = "Tweet forwarder update at: "
+        self.msg_status = await self.report_ch.fetch_message(829113456195797092)
+        self.status_content = "**Tweet forwarder update at:**"
 
 
     async def get_tweets(self, target:dict, start_t, end_t):

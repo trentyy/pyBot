@@ -123,8 +123,10 @@ class  YTForwarder(Cog_Extension):
                 print(content)
                 last_search = datetime.now()
                 await msg.edit(content=content,embed=None)
-            print(f"updateMsg msg_id: {msg.id} to \n{content}")
-            await self.msg_status.edit(content=f"YouTube forwarder update at: {datetime.now()}")
+            #print(f"updateMsg msg_id: {msg.id} to \n{content}")
+            content = "**YouTube forwarder update at:**"
+            content += f"\n ```{datetime.now().strftime('%m/%d %H:%M')}```"
+            await self.msg_status.edit(content=content)
         except Exception as e:
             err_content = traceback.format_exc()
             await self.ch_err.send(f"ERR: \n`{err_content}`")
