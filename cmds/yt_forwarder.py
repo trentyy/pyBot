@@ -81,11 +81,13 @@ class  YTForwarder(Cog_Extension):
             else:
                 unrelated.append(item)
         if (len(unrelated)): print("videosListFilter: unrelated: ", unrelated)
-    def videosListUpdate(self, upcoming_videos, live_videos):
+    async def videosListUpdate(self, upcoming_videos, live_videos):
         # check videos stream status
         all_videos = list(upcoming_videos.keys()) + list(live_videos.keys())
         for videoId in all_videos:
             liveBroadcastContent, scheduledStartTime = self.ytVideosAPI(videoId)
+            await asyncio.sleep(0.1)
+
             if (liveBroadcastContent=="none"):
                 print("already publish: ", videoId)
                 if (videoId in upcoming_videos.keys()):
@@ -162,7 +164,7 @@ class  YTForwarder(Cog_Extension):
                 result = self.ytSearchAPI("live")
                 self.videosListFilter(result, BOX_MEMBER_ID)
 
-                self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
+                self.upcoming_videos, self.live_videos = await self.videosListUpdate(self.upcoming_videos, self.live_videos)
                 await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming, self.upcoming_last_search)
                 await self.updateMsg("live", self.live_videos, self.msg_live, self.upcoming_last_search)
                 
@@ -178,7 +180,7 @@ class  YTForwarder(Cog_Extension):
                     return
                 time += timedelta(seconds=-time.second, microseconds=-time.microsecond)
 
-                self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
+                self.upcoming_videos, self.live_videos = await self.videosListUpdate(self.upcoming_videos, self.live_videos)
                 await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming, self.upcoming_last_search)
                 await self.updateMsg("live", self.live_videos, self.msg_live, self.upcoming_last_search)
     def __init__(self, bot):
@@ -207,7 +209,7 @@ class  YTForwarder(Cog_Extension):
                         result = self.ytSearchAPI("live")
                         self.videosListFilter(result, BOX_MEMBER_ID)
                     print("get new list at: ", datetime.now())
-                self.upcoming_videos, self.live_videos = self.videosListUpdate(self.upcoming_videos, self.live_videos)
+                self.upcoming_videos, self.live_videos = await self.videosListUpdate(self.upcoming_videos, self.live_videos)
                 await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming, self.upcoming_last_search)
                 await self.updateMsg("live", self.live_videos, self.msg_live, self.upcoming_last_search)
                 

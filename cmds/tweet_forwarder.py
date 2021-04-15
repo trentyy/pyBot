@@ -85,6 +85,7 @@ class TweetForwarder(Cog_Extension):
                     
 
                     res = await self.get_tweets(tg, self.cur_st_t, self.cur_ed_t)
+                    await asyncio.sleep(0.1) 
                     if (res.status_code!=200): 
                         print(f"fail to get_tweets from {tg['username']}")
                         continue
@@ -213,7 +214,7 @@ class TweetForwarder(Cog_Extension):
             jdata = json.load(f)
             f.close()
         # set time, assume both of them is utc time
-        
+        await asyncio.sleep(0.1)
         start_time = start_t.isoformat('T') + 'Z'
         end_time = end_t.isoformat('T') + 'Z'
         # set for request
@@ -248,8 +249,6 @@ class TweetForwarder(Cog_Extension):
             print("get_tweets : url=", url)
             await self.debug_ch.send(f"request fail, status_code: {res.status_code}" )
             await self.debug_ch.send(f"get_tweets : url={url}")
-            
-
         
         return res
 
