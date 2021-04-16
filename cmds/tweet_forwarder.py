@@ -73,6 +73,7 @@ class TweetForwarder(Cog_Extension):
                 # report update time
                 content=self.status_content + f"\n```{now.strftime('%m/%d %H:%M:%S')}```"
                 await self.msg_status.edit(content=content)
+                await self.ch_status.edit(name=f"Twi {now.strftime('%m/%d %H:%M:%S')} ✅")
 
 
                 # set search time
@@ -192,6 +193,7 @@ class TweetForwarder(Cog_Extension):
         
         self.channel = self.bot.get_channel(twitter_setting['dc_ch_id_general']) #default channel
         self.reply_ch = self.bot.get_channel(twitter_setting['dc_ch_id_reply'])
+        self.ch_status = self.bot.get_channel(832496669752819743)
 
         if DEBUG:
             self.channel = self.debug_ch

@@ -126,9 +126,12 @@ class  YTForwarder(Cog_Extension):
                 last_search = datetime.now()
                 await msg.edit(content=content,embed=None)
             #print(f"updateMsg msg_id: {msg.id} to \n{content}")
+            now = datetime.now()
             content = "**YouTube forwarder update at:**"
-            content += f"\n ```{datetime.now().strftime('%m/%d %H:%M')}```"
+            content += f"\n ```{now.strftime('%m/%d %H:%M')}```"
             await self.msg_status.edit(content=content)
+            await self.ch_status.edit(name=f"YT {now.strftime('%m/%d %H:%M')} ✅")
+
         except Exception as e:
             err_content = traceback.format_exc()
             await self.ch_err.send(f"ERR: \n`{err_content}`")
@@ -191,9 +194,10 @@ class  YTForwarder(Cog_Extension):
             sleep_minuates = -1
             guild = self.bot.get_guild(782232756238549032)
             channel = self.bot.get_channel(823146960826662912) # waiting room channel
-            ch_status = self.bot.get_channel(814226297931694101) # update status in select ch
+            ch_status_msg = self.bot.get_channel(814226297931694101) # update status in select ch
             self.ch_err = self.bot.get_channel(782232918512107542)
-            self.msg_status = await ch_status.fetch_message(831658507161567282) # msg to update
+            self.ch_status = self.bot.get_channel(832474478868693032)
+            self.msg_status = await ch_status_msg.fetch_message(831658507161567282) # msg to update
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
