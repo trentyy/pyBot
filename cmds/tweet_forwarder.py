@@ -71,7 +71,7 @@ class TweetForwarder(Cog_Extension):
                 now = dt.datetime.now()
 
                 # report update time
-                content=self.status_content + f"\n```{now.strftime('%m/%d %H:%M:%S')}```"
+                content=self.status_content + f"\n```{now.strftime('%Y/%m/%d %H:%M')}```"
                 await self.msg_status.edit(content=content)
                 #await self.ch_status.edit(name=f"Twi {now.strftime('%H:%M')} ✅")
 

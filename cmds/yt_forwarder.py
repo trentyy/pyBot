@@ -128,7 +128,7 @@ class  YTForwarder(Cog_Extension):
             #print(f"updateMsg msg_id: {msg.id} to \n{content}")
             now = datetime.now()
             content = "**YouTube forwarder update at:**"
-            content += f"\n ```{now.strftime('%m/%d %H:%M')}```"
+            content += f"\n ```{now.strftime('%Y/%m/%d %H:%M')}```"
             await self.msg_status.edit(content=content)
             #await self.ch_status.edit(name=f"YT {now.strftime('%H:%M')} ✅")
 
