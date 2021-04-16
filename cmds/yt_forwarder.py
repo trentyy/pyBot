@@ -130,7 +130,7 @@ class  YTForwarder(Cog_Extension):
             content = "**YouTube forwarder update at:**"
             content += f"\n ```{now.strftime('%m/%d %H:%M')}```"
             await self.msg_status.edit(content=content)
-            await self.ch_status.edit(name=f"YT {now.strftime('%m/%d %H:%M')} ✅")
+            await self.ch_status.edit(name=f"YT {now.strftime('%H:%M')} ✅")
 
         except Exception as e:
             err_content = traceback.format_exc()
