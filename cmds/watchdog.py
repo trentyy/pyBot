@@ -9,17 +9,17 @@ import dateutil.parser
 SLEEP_TIME = 300
 
 class Watchdog(Cog_Extension):
-    def twi_status_update(self, edit_at, now):
+    def twi_status_update(self, edited_at, now):
         old_status = self.twi_fw_service_alive
-        dm = (edit_at - now).seconds / 60
+        dm = (edited_at - now).seconds / 60
         new_status = True if dm < 5 else False
         self.twi_fw_service_alive = new_status  # update status
         need_report = (old_status) and (not new_status)
         
         return True if need_report else False
-    def yt_status_update(self, edit_at, now):
+    def yt_status_update(self, edited_at, now):
         old_status = self.yt_fw_service_alive
-        dm = (edit_at - now).seconds / 60
+        dm = (edited_at - now).seconds / 60
         new_status = True if dm < 5 else False
         self.yt_fw_service_alive = new_status   # update status
         need_report = (old_status) and (not new_status)
@@ -36,23 +36,23 @@ class Watchdog(Cog_Extension):
         async def interval():
             await self.default_setting(bot)
             while not self.bot.is_closed():
-                now = dt.datetime.now()
+                now = datetime.now()
                 
-                msg_twi = self.ch.fetch_message(self.msg_twi_id)
-                edit_at = msg_twi.edit_at
-                need_report = self.twi_status_update(edit_at, now)
-                if (twi_status_update):
-                    mention = self.role.mention
-                    self.report_ch.send(f"{mention} twitter轉發掛了")
-                    self.ch.send(f"{mention} :Cat_Yuru: 抱歉，twitter轉發出了點問題，有時間來看看嗎?")
-
-                msg_yt = self.ch.fetch_message(self.msg_yt_id)
-                edit_at = msg_y.edit_at
-                need_report = self.yt_status_update(edit_at, now)
+                msg_twi = await self.ch.fetch_message(self.msg_twi_id)
+                edited_at = msg_twi.edited_at
+                need_report = self.twi_status_update(edited_at, now)
                 if (need_report):
                     mention = self.role.mention
-                    self.report_ch.send(f"{mention} YT轉發掛了")
-                    self.ch.send(f"{mention}:mia_mem05: 糟糕，YT轉發有點不對勁")
+                    await self.report_ch.send(f"{mention} twitter轉發掛了")
+                    await self.ch.send(f"{mention} <:Cat_Yuru:> 抱歉，twitter轉發出了點問題，有時間來看看嗎?")
+
+                msg_yt = await self.ch.fetch_message(self.msg_yt_id)
+                edited_at = msg_yt.edited_at
+                need_report = self.yt_status_update(edited_at, now)
+                if (need_report):
+                    mention = self.role.mention
+                    await self.report_ch.send(f"{mention} YT轉發掛了")
+                    await self.ch.send(f"{mention} <:mia_mem05:> 糟糕，YT轉發有點不對勁")
 
                 # wait
                 await asyncio.sleep(SLEEP_TIME) # unit: second
@@ -62,7 +62,6 @@ class Watchdog(Cog_Extension):
         await bot.wait_until_ready()
 
         self.guild =  bot.get_guild(782232756238549032)
-        print("TweetForwarder: working at guild=", self.guild)
         self.report_ch = self.bot.get_channel(782232918512107542) # infrom manager
         self.role = self.guild.get_role(785503910818218025) # bot manager role
         
