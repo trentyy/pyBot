@@ -7,7 +7,7 @@
         "sakuraisumi": "UCIClNlvEUvEqLe_rs_i8h_w",
         "umitukiyuru": "UCMMnAFarbXqv6SEImoANlAQ",
         "koinoya_mai": "UCgttI8QfdWhvd3SRtCYcJzw",
-        "hanakumo_rin": "UCPdKdMpXlmwcGdfiUTNusfg",
+        "hanakumo_rin": "UCPdKdMpXlmwcGdfiUTNusfg"
 
     },
     "proproduction": {
@@ -89,6 +89,14 @@
         "dc_role": "830013399181688892",
         "yt_fw_ch": "817754243616342039",
         "nickname": "ももあ",
+        "embed_color": 14932942
+    },
+    "azusa": {
+        "id": "UCpNu3ngL8XHyQ0-T5I8dB2g",
+        "title": "sakuya azusaCh.咲夜あずさ / プロプロ",
+        "dc_role": "838320351175245835",
+        "yt_fw_ch": "817754243616342039",
+        "nickname": "あずさ",
         "embed_color": 14932942
     }
 }

@@ -98,10 +98,20 @@
         "id": "1379051454300741632",
         "username": "ikoimomoa",
         "name": "憩居ももあ／プロプロ2期生",
-        "icon_url": "https://pbs.twimg.com/profile_images/1379073339164008448/yggQvvDw_400x400.jpg",
+        "icon_url": "https://pbs.twimg.com/profile_images/1382233171593285633/jp3d_QQF_400x400.jpg",
         "dc_role": "830013399181688892",
         "twi_fw_ch": "830011376645832754",
         "nickname": "ももあちゃん",
+        "embed_color": 14932942
+    },
+    "azusa": {
+        "id": "1388437493142364161",
+        "username": "sakuya_azusa",
+        "name": "咲夜あずさ/プロプロ２期生",
+        "icon_url": "https://pbs.twimg.com/profile_images/1388438165644464128/DoTGUAls_400x400.jpg",
+        "dc_role": "838320351175245835",
+        "twi_fw_ch": "838319895870570496",
+        "nickname": "あずさちゃん",
         "embed_color": 14932942
     }
 }
