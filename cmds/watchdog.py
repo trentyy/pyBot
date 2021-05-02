@@ -44,7 +44,7 @@ class Watchdog(Cog_Extension):
                 if (need_report):
                     mention = self.role.mention
                     await self.report_ch.send(f"{mention} twitter轉發掛了")
-                    await self.ch.send(f"{mention} <:Cat_Yuru:> 抱歉，twitter轉發出了點問題，有時間來看看嗎?")
+                    #await self.ch.send(f"{mention} <:Cat_Yuru:> 抱歉，twitter轉發出了點問題，有時間來看看嗎?")
 
                 msg_yt = await self.ch.fetch_message(self.msg_yt_id)
                 edited_at = msg_yt.edited_at
@@ -52,7 +52,7 @@ class Watchdog(Cog_Extension):
                 if (need_report):
                     mention = self.role.mention
                     await self.report_ch.send(f"{mention} YT轉發掛了")
-                    await self.ch.send(f"{mention} <:mia_mem05:> 糟糕，YT轉發有點不對勁")
+                    #await self.ch.send(f"{mention} <:mia_mem05:> 糟糕，YT轉發有點不對勁")
 
                 # wait
                 await asyncio.sleep(SLEEP_TIME) # unit: second
@@ -68,6 +68,7 @@ class Watchdog(Cog_Extension):
         self.ch = self.bot.get_channel(814226297931694101)
         self.msg_twi_id = 829113456195797092
         self.msg_yt_id = 831658507161567282
+        self.twi_fw_service_alive = True
         
 
         self.count = int(0)

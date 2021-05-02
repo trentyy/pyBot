@@ -19,7 +19,7 @@ class  RoleManager(Cog_Extension):
             '🎐': (782625222968344597),
             '💗': (817743717217206273),
             '🌺': (817743846514884649),
-            '\u1F43B\u200D\u2744\uFE0F‍': (830013401413058580),
+            '🐻‍❄️‍': (830013401413058580),
             '👑': (830013399181688892),
             '🦊': (838320351175245835)
         }
@@ -42,7 +42,7 @@ class  RoleManager(Cog_Extension):
 
             # 通知身分組
             follow_roles = self.follow_roles
-
+            print(data.emoji, data.emoji.id, data.emoji.name)
             if str(data.emoji) in follow_roles.keys():
                 role = follow_roles[str(data.emoji)]
 
