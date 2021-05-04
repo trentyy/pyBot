@@ -36,21 +36,22 @@ class ytUpdater():
         self.cur = self.db.cursor()
     def closeDB(self):
         self.db.close()
-    def task(self, do_times, sleep_seconds):
-        
-        res = youtubeAPI.SearchList()
-        videos=[]
-        for item in res['items']:
-            videoId, snippet = item['id']['videoId'], item['snippet']
-            channelId, title = snippet['channelId'], snippet['title']
-            liveBroadcastContent = snippet['liveBroadcastContent']
-            videos.append(videoId)
-        print("videos in task, searchlist: ", videos)
-        self.insertVideo(videos)
+    def task(self, do_times, sleep_seconds, doSearchList=True):
+        if (doSearchList):
+            res = youtubeAPI.SearchList()
+            videos=[]
+            for item in res['items']:
+                videoId, snippet = item['id']['videoId'], item['snippet']
+                channelId, title = snippet['channelId'], snippet['title']
+                liveBroadcastContent = snippet['liveBroadcastContent']
+                videos.append(videoId)
+            print("videos in task, searchlist: ", videos)
+            self.insertVideo(videos)
         
         for i in range(do_times):
             # load target video list from database
             db_videos = self.loadDataList()
+            
             # update these video with youtube api
             self.updateVideoStatus(db_videos)
             
@@ -58,23 +59,22 @@ class ytUpdater():
             time.sleep(sleep_seconds)
         # finish task successfully
         self.closeDB()
-    def loadDataList(self, type="waiting"):
+    def loadDataList(self, select="videoId", type="waiting"):
         # type: waiting, live, completed
-        sql = "SELECT videoId FROM `videos` WHERE `isForwarded` = 0 AND "
+        sql = f"SELECT {select} FROM `videos` WHERE `isForwarded` = 0 AND "
         if (type=="waiting"):
             sql += "(`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
         elif (type=="live"):
             sql += "(`actualStartTime` IS NOT NULL OR `actualEndTime` IS NULL);"
         elif (type=="completed"):
             sql += "(`actualStartTime` IS NOT NULL OR `actualEndTime` IS NOT NULL);"
+        else:
+            print("type is not in [waiting, live, completed]")
+            sql += "(`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
         result_num = self.cur.execute(sql)
         result = self.cur.fetchall()
-        videoList = []
-        for item in result:
-            videoList.append(item['videoId'])
-        return videoList
+        return result
     def parseVideoInfo(self, request):
-
         try:
             item = request['items'][0]  # deal with yt video api
         except Exception as e:
@@ -96,9 +96,11 @@ class ytUpdater():
             aEndTime = isoparse(liveSD['actualEndTime'])
             aEndTime = "'"+aEndTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
         return channelId, title, sStartTime, aStartTime, aEndTime
-    def updateVideoStatus(self, videoIds):
+    def updateVideoStatus(self, result):
         # videoIds is a list of youtube videoId, use it with api to update
-        for videoId in videoIds:
+        print("updating these video: ", rsult)
+        for item in result:
+            videoId = item['videoId']
             request = youtubeAPI.Videos(
                 videoId,
                 part="snippet,liveStreamingDetails"
@@ -138,6 +140,7 @@ class ytUpdater():
             self.db.commit()
 if __name__ == "__main__":
     updater = ytUpdater()
-    updater.task(do_times=15, sleep_seconds=120)
+    print(updater.loadDataList(select="videoId, scheduledStartTime", type="waiting"))
+    updater.task(do_times=2, sleep_seconds=10, doSerachList=False)
 
     
