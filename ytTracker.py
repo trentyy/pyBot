@@ -13,15 +13,17 @@ import googleapiclient.discovery
 # my module
 from APIs import youtubeAPI
 
+DEBUG = False
+
 with open('db_setting.json', 'r') as f:
-            db_setting = json.load(f)
-            f.close()
+    db_setting = json.load(f)
+    f.close()
 HOST = db_setting['host']
 USER = db_setting['user']
 PW = db_setting['password']
 DB = db_setting['database']
 
-class ytUpdater():
+class ytTracker():
     def __init__(self):
         with open('db_setting.json', 'r') as f:
             db_setting = json.load(f)
@@ -37,6 +39,7 @@ class ytUpdater():
     def closeDB(self):
         self.db.close()
     def task(self, do_times, sleep_seconds, doSearchList=True):
+        self.connectDB()
         if (doSearchList):
             res = youtubeAPI.SearchList()
             videos=[]
@@ -45,7 +48,7 @@ class ytUpdater():
                 channelId, title = snippet['channelId'], snippet['title']
                 liveBroadcastContent = snippet['liveBroadcastContent']
                 videos.append(videoId)
-            print("videos in task, searchlist: ", videos)
+            if DEBUG: print("videos in task, searchlist: ", videos)
             self.insertVideo(videos)
         
         for i in range(do_times):
@@ -65,21 +68,28 @@ class ytUpdater():
         if (type=="waiting"):
             sql += "(`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
         elif (type=="live"):
-            sql += "(`actualStartTime` IS NOT NULL OR `actualEndTime` IS NULL);"
+            sql += "(`actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL);"
         elif (type=="completed"):
-            sql += "(`actualStartTime` IS NOT NULL OR `actualEndTime` IS NOT NULL);"
+            sql += "(`actualStartTime` IS NOT NULL AND `actualEndTime` IS NOT NULL);"
         else:
             print("type is not in [waiting, live, completed]")
             sql += "(`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
-        result_num = self.cur.execute(sql)
-        result = self.cur.fetchall()
+        try:
+            result_num = self.cur.execute(sql)
+            result = self.cur.fetchall()
+        except Exception as e:
+            time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(time+"\t[Error] \tytTracker.loadDataList while execute sql:")
+            print(sql)
+            raise e
         return result
     def parseVideoInfo(self, request):
         try:
             item = request['items'][0]  # deal with yt video api
         except Exception as e:
-            print(e)
+            print(datetime.now(), e)
             print(request)
+            return None
         channelId = item['snippet']['channelId']
         title = item['snippet']['title']
         channelTitle = item['snippet']['channelTitle']
@@ -98,13 +108,17 @@ class ytUpdater():
         return channelId, title, sStartTime, aStartTime, aEndTime
     def updateVideoStatus(self, result):
         # videoIds is a list of youtube videoId, use it with api to update
-        print("updating these video: ", rsult)
+        if DEBUG: print("updating these video: ", result)
         for item in result:
             videoId = item['videoId']
             request = youtubeAPI.Videos(
                 videoId,
                 part="snippet,liveStreamingDetails"
             )
+            if res['pageInfo']['totalResults']==0:
+                time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print(time+"\tPASS\tCan't find video id: ",videoId)
+                continue
             output = self.parseVideoInfo(request)
             channelId, title, sStartTime, aStartTime, aEndTime = output
             
@@ -120,7 +134,10 @@ class ytUpdater():
                 videoId,
                 part="snippet,liveStreamingDetails"
             )
-
+            if res['pageInfo']['totalResults']==0:
+                time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print(time+"\tPASS\tCan't find video id: ",videoId)
+                continue
             output = self.parseVideoInfo(request)
             channelId, title, sStartTime, aStartTime, aEndTime = output
 
@@ -136,11 +153,14 @@ class ytUpdater():
             except pymysql.err.ProgrammingError as e:
                 print(e)
                 print(sql)
-                raise e
+                self.connectDB()
             self.db.commit()
 if __name__ == "__main__":
-    updater = ytUpdater()
-    print(updater.loadDataList(select="videoId, scheduledStartTime", type="waiting"))
-    updater.task(do_times=2, sleep_seconds=10, doSerachList=False)
+    tracker = ytTracker()
+    res = tracker.loadDataList(select="videoId, scheduledStartTime", type="completed")
+    if DEBUG:
+        print(type(res), len(res))
+        print(res)
+    tracker.task(do_times=29, sleep_seconds=60, doSearchList=True)
 
     

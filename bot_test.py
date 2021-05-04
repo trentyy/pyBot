@@ -9,12 +9,13 @@ with open('setting.json', mode='r', encoding='utf8') as jfile:
 
 bot = commands.Bot(command_prefix= '>|')
 
+"""
 if len(sys.argv) == 1:
     print("please add folder names as argument")
     exit
 else:
     test_folder = (sys.argv[1])
-
+"""
 
 @bot.event
 async def on_ready():
@@ -26,7 +27,7 @@ async def on_ready():
 @bot.command()
 async def load(ctx, extension):
     if ctx.author.guild_permissions.administrator:
-        bot.unload_extension(f'{test_folder}.{extension}')
+        bot.unload_extension(f'cmds.{extension}')
         await ctx.send(f'Loaded extension: {extension}.')
     else:
         msg = "You aren't the `Administrator`"
@@ -35,7 +36,7 @@ async def load(ctx, extension):
 @bot.command()
 async def unload(ctx, extension):
     if ctx.author.guild_permissions.administrator:
-        bot.unload_extension(f'{test_folder}.{extension}')
+        bot.unload_extension(f'cmds.{extension}')
         await ctx.send(f'Unloaded extension: {extension}.')
     else:
         msg = "You aren't the `Administrator`"
@@ -43,17 +44,21 @@ async def unload(ctx, extension):
 @bot.command()
 async def reload(ctx, extension):
     if ctx.author.guild_permissions.administrator:
-        bot.reload_extension(f'{test_folder}.{extension}')
+        bot.reload_extension(f'cmds.{extension}')
         await ctx.send(f'Reloaded extension: {extension}.')
     else:
         msg = "You aren't the `Administrator`"
         await ctx.send(msg)
 
-for filename in os.listdir(f'./{test_folder}'):
+extension_name = 'cmds.tweet_forwarder_sql'
+bot.load_extension(extension_name)
+bot.load_extension('cmds.yt_forwarder')
+"""
+for filename in os.listdir(f'./cmds'):
     if filename.endswith('.py'):
-        extension_name = f'{test_folder}.{filename[:-3]}'
+        extension_name = f'cmds.{filename[:-3]}'
         print(extension_name)
         bot.load_extension(extension_name)
-
+"""
 if __name__ == '__main__':
     bot.run(jdata['TOKEN'])

@@ -4,6 +4,7 @@ from core.classes import Cog_Extension
 import json, asyncio, sys, socket
 import requests, urllib3
 import datetime as dt
+from dateutil.parser import isoparse
 
 DEBUG=False
 DEBUG_HOUR=0
@@ -16,6 +17,13 @@ with open('twitter_forward_setting.json','r', encoding='utf8') as f:
 t_url = twitter_setting['twitter_url']
 twitter_icon_url = twitter_setting['twitter_icon_url']
 
+with open('db_setting.json', 'r') as f:
+    db_setting = json.load(f)
+    f.close()
+HOST=db_setting['host']
+USER=db_setting['user']
+PW=db_setting['password']
+DB=db_setting['database']
 # gen1 with staff
 proproduction = twitter_setting['proproduction']
 mikuru = twitter_setting['mikuru']
@@ -28,11 +36,13 @@ mai = twitter_setting['mai']
 rin = twitter_setting['rin']
 aoi = twitter_setting['aoi']
 momoa = twitter_setting['momoa']
+azusa = twitter_setting['azusa']
+
 BOX_MEMBER = (proproduction, 
         mikuru, mia, chiroru, isumi, yuru, 
         mai, rin, aoi, momoa)
 TARGETS_GEN1 = mikuru, mia, chiroru, isumi, yuru
-TARGETS_GEN2 = mai, rin, aoi, momoa      # here is TARGETS list
+TARGETS_GEN2 = mai, rin, aoi, momoa, azusa      # here is TARGETS list
 BOX_MEMBER_ID = [x['id'] for x in BOX_MEMBER]
 SLEEP_TIME = 10
 
@@ -56,6 +66,7 @@ class TweetForwarder(Cog_Extension):
         try:
             self.last_ed_t = dt.datetime.fromisoformat(time)
             print("Start time set to: ", self.last_ed_t)
+            await ctx.send(f"Start time set to: {self.last_ed_t}")
         except Exception as e:
             await ctx.send(e)
     def __init__(self, bot):
@@ -98,23 +109,15 @@ class TweetForwarder(Cog_Extension):
                     # if no tweet in time interval, continue
 
                     for i in range(tweets['meta']['result_count']):
-                        tweet = tweets['data'][i]
-
-                        # found tweet by target[username], and get tweet url=twitter_url+target['username']+'/status/'+tweet_id
-                        tweet_url = t_url + tg['username'] + '/status/' + tweet['id']
-                        tweet_time = tweet['created_at'].replace("T"," ")[:-1]
+                        data = tweets['data'][i]
+                        tweet_url = t_url + tg['username'] + '/status/' + data['id']
+                        created_at = data['created_at'].replace("T"," ")[:-1]
+                                                
                         try:
-                            tweet_time = dt.datetime.fromisoformat(tweet_time)# + dt.timedelta(hours=8)
+                            created_at = dt.datetime.fromisoformat(created_at)
                         except Exception as e:
                             print("Exception in tweet time transform: ", e, file=sys.stderr)
-                            tweet_time = dt.datetime.now()
-                        """
-                        # Embed setting 
-                        embed=discord.Embed(url=tweet_url, description=tweet['text'], color=tg['embed_color'], timestamp=tweet_time)
-                        embed.set_author(name=f"{tg['name']} ( @{tg['username']})", url=t_url+tg['username'])#, icon_url=tg['icon_url'])
-                        embed.set_thumbnail(url=tg['icon_url']) # bigger photo at top right
-                        embed.set_footer(text="Twitter", icon_url="https://upload.wikimedia.org/wikipedia/zh/thumb/9/9f/Twitter_bird_logo_2012.svg/590px-Twitter_bird_logo_2012.svg.png")
-                        """
+                            created_at = dt.datetime.now()
                         
                         self.new_t_all += 1
                         msg_mention = f"{role.mention} "
@@ -125,11 +128,12 @@ class TweetForwarder(Cog_Extension):
                         debug_msg = f'{tg["username"]} '
                         
                         # tweet in reply to user
-                        if "in_reply_to_user_id" in tweet.keys():
+
+                        if "in_reply_to_user_id" in data.keys():
                             
-                            msg_V = "just reply a tweet:"
-                            debug_msg += f'reply to id: {tweet["in_reply_to_user_id"]}, '
-                            if (not (tweet["in_reply_to_user_id"] in BOX_MEMBER_ID)):
+                            msg_V = "just reply a data:"
+                            debug_msg += f'reply to id: {data["in_reply_to_user_id"]}, '
+                            if (not (data["in_reply_to_user_id"] in BOX_MEMBER_ID)):
                                 debug_msg += f'message forward to {self.reply_ch.name}'
                                 if (DEBUG):
                                     await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
@@ -139,35 +143,36 @@ class TweetForwarder(Cog_Extension):
                                 continue
                             else:
                                 msg_V = "tete!"
-                                if (tweet["in_reply_to_user_id"] == tg["username"]):
+                                if (data["in_reply_to_user_id"] == tg["username"]):
                                     msg_V = "reply to herself"
                                 debug_msg += f'is relative, message forward to {self.channel.name}'
                                 if (DEBUG):
-                                    await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
+                                    await self.debug_ch.send(msg_S + msg_V + msg_O + msg_Link)
                                 else:
-                                    await self.channel.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
+                                    await self.channel.send(msg_S + msg_V + msg_O + msg_Link)
                                 print(debug_msg)
                                 continue
-                        elif (tweet["text"][:2] == "RT"):
-                            msg_V = "just retweet this:"
-                            debug_msg += f'retweet, message forward to {self.channel.name}'
+                        elif (data["text"][:2] == "RT"):
+                            msg_V = "just RT this:"
+                            debug_msg += f'RT, message forward to {self.channel.name}'
                             if (DEBUG):
                                 await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                             else:
                                 await self.channel.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                             print(debug_msg)
                             continue
-
-                        # visiable forward to channel
-                        self.new_t_vis += 1
-                        msg_V = "just post a tweet:"
-                        debug_msg += f'post a tweet, message forward to {tg["twi_fw_ch"]}'
-                        if (DEBUG):
-                            await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
                         else:
-                            await self.bot.get_channel(int(tg['twi_fw_ch'])).send(
-                                msg_mention + msg_S + msg_V + msg_O + msg_Link)
-                        print(debug_msg)
+
+                            # visiable forward to channel
+                            self.new_t_vis += 1
+                            msg_V = "just post a tweet:"
+                            debug_msg += f'post a tweet, message forward to {tg["twi_fw_ch"]}'
+                            if (DEBUG):
+                                await self.debug_ch.send(msg_mention + msg_S + msg_V + msg_O + msg_Link)
+                            else:
+                                await self.bot.get_channel(int(tg['twi_fw_ch'])).send(
+                                    msg_mention + msg_S + msg_V + msg_O + msg_Link)
+                            print(debug_msg)
                     await asyncio.sleep(1) 
 
                 # update last search range by current search range

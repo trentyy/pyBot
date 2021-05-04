@@ -22,10 +22,8 @@ youtube = googleapiclient.discovery.build(
 def Videos(id, part=None):
     if (part==None):
         part="snippet,statistics,liveStreamingDetails"
-    request = youtube.videos().list(
-        part=part,
-        id=id
-    )
+        
+    request = youtube.videos().list(part=part,id=id)
     response = request.execute()
 
     return(response)
