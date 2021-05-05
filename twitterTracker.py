@@ -210,4 +210,12 @@ def main():
         tracker.parseTweet(tweets, tg['username'])
         time.sleep(1)
 if __name__ == "__main__":
-    main()
+    #main()
+    tracker = twitterTracker()
+    res = tracker.loadDataList(
+                        select = "`id`, `username`",
+                        where = "`isForwarded` = 0 AND `username` = 'shiroseaoi'" ,
+                        extra = " ORDER BY `created_at` ASC LIMIT 5"
+                    )
+    for item in res:
+        print(item)

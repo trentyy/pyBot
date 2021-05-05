@@ -9,14 +9,11 @@ import dateutil.parser
 # my module
 import ytTracker
 
-with open('yt_fw_setting.json','r', encoding='utf8') as f:
-    yt_fw_setting = json.load(f)
-    f.close()
+
 with open('yt_api.json', 'r', encoding='utf8') as f:
     yt_api_setting = json.load(f)
     f.close()
 DEVELOPER_KEY = yt_api_setting["DEVELOPER_KEY"]
-BOX_MEMBER_ID = yt_fw_setting["BOX_MEMBER_ID"]
 
 with open('db_setting.json', 'r') as f:
     db_setting = json.load(f)
@@ -82,11 +79,9 @@ class  ytWaitingRoom(Cog_Extension):
             await self.updateMsg("live", live_videos, self.msg_live)
                 
     def __init__(self, bot):
-        
         async def interval():
             await bot.wait_until_ready()
             SLEEP_TIME = 60 # 60 seconds
-            sleep_minuates = -1
             guild = self.bot.get_guild(782232756238549032)
             channel = self.bot.get_channel(823146960826662912) # waiting room channel
             ch_status_msg = self.bot.get_channel(814226297931694101) # update status in select ch
@@ -96,9 +91,6 @@ class  ytWaitingRoom(Cog_Extension):
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
-                sleep_minuates += 1
-                await asyncio.sleep(SLEEP_TIME)
-
                 select="videoId, scheduledStartTime"
                 upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
                 select="videoId, scheduledStartTime"
@@ -107,6 +99,8 @@ class  ytWaitingRoom(Cog_Extension):
                 print("updating: ",upcoming_videos, live_videos)
                 await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
                 await self.updateMsg("live", live_videos, self.msg_live)
+                
+                await asyncio.sleep(SLEEP_TIME)
                 
         self.bot = bot
         self.upcoming_last_search = datetime.now() - timedelta(hours=1)
@@ -118,10 +112,6 @@ class  ytWaitingRoom(Cog_Extension):
         self.tracker = ytTracker.ytTracker()
 
         self.bg_task = self.bot.loop.create_task(interval())
-
-
-        
-
 
 def setup(bot):
     bot.add_cog(ytWaitingRoom(bot))
