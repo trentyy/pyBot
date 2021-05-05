@@ -45,7 +45,7 @@ class ytTracker():
             videos=[]
             for item in res['items']:
                 videoId, snippet = item['id']['videoId'], item['snippet']
-                channelId, title = snippet['channelId'], snippet['title']
+                channelId, title, publishedAt = snippet['channelId'], snippet['title'], snippet['publishedAt']
                 liveBroadcastContent = snippet['liveBroadcastContent']
                 videos.append(videoId)
             if DEBUG: print("videos in task, searchlist: ", videos)
@@ -90,28 +90,41 @@ class ytTracker():
             print(datetime.now(), e)
             print(request)
             return None
+        res = {}
         channelId = item['snippet']['channelId']
         title = item['snippet']['title']
         channelTitle = item['snippet']['channelTitle']
-        
+        publishedAt = isoparse(item['snippet']['publishedAt'])
         sStartTime = aStartTime = aEndTime = "NULL"
-        liveSD = item['liveStreamingDetails']
-        if ('scheduledStartTime' in liveSD.keys()):
-            sStartTime = isoparse(liveSD['scheduledStartTime'])
-            sStartTime = "'"+sStartTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
-        if ('actualStartTime' in liveSD.keys()):
-            aStartTime = isoparse(liveSD['actualStartTime'])
-            aStartTime = "'"+aStartTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
-        if ('actualEndTime' in liveSD.keys()):
-            aEndTime = isoparse(liveSD['actualEndTime'])
-            aEndTime = "'"+aEndTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
-        return channelId, title, sStartTime, aStartTime, aEndTime
+
+        res['channelId'] = channelId
+        res['title'] = title
+        res['publishedAt'] = "'"+publishedAt.strftime('%Y-%m-%d %H:%M:%S')+"'"
+        res['scheduledStartTime'] = "NULL"
+        res['actualStartTime'] = "NULL"
+        res['actualEndTime'] = "NULL"
+
+        if ('liveStreamingDetails' in item.keys()):
+            liveSD = item['liveStreamingDetails']
+            if ('scheduledStartTime' in liveSD.keys()):
+                sStartTime = isoparse(liveSD['scheduledStartTime'])
+                sStartTime = "'"+sStartTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
+                res['scheduledStartTime'] = sStartTime
+            if ('actualStartTime' in liveSD.keys()):
+                aStartTime = isoparse(liveSD['actualStartTime'])
+                aStartTime = "'"+aStartTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
+                res['actualStartTime'] = aStartTime
+            if ('actualEndTime' in liveSD.keys()):
+                aEndTime = isoparse(liveSD['actualEndTime'])
+                aEndTime = "'"+aEndTime.strftime('%Y-%m-%d %H:%M:%S')+"'"
+                res['actualEndTime'] = aEndTime
+        return res
     def updateVideoStatus(self, result):
         # videoIds is a list of youtube videoId, use it with api to update
         if DEBUG: print("updating these video: ", result)
         for item in result:
             videoId = item['videoId']
-            request = youtubeAPI.Videos(
+            res = youtubeAPI.Videos(
                 videoId,
                 part="snippet,liveStreamingDetails"
             )
@@ -119,18 +132,19 @@ class ytTracker():
                 time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(time+"\tPASS\tCan't find video id: ",videoId)
                 continue
-            output = self.parseVideoInfo(request)
-            channelId, title, sStartTime, aStartTime, aEndTime = output
+            res = self.parseVideoInfo(res)
             
-            sql =   "UPDATE `videos` SET `scheduledStartTime` = " + sStartTime
-            sql +=  ", `actualStartTime` = " + aStartTime
-            sql +=  ", `actualEndTime` = " + aEndTime
+            sql =   "UPDATE `videos` SET "
+            sql += " `publishedAt` = " + res['publishedAt']
+            sql += ", `scheduledStartTime` = " + res['scheduledStartTime']
+            sql += ", `actualStartTime` = " + res['actualStartTime']
+            sql += ", `actualEndTime` = " + res['actualEndTime']
             sql += " WHERE `videos`.`videoId` = " + "'"+videoId+"'"
             self.cur.execute(sql)
             self.db.commit()
     def insertVideo(self, videoIds):
         for videoId in videoIds:
-            request = youtubeAPI.Videos(
+            res = youtubeAPI.Videos(
                 videoId,
                 part="snippet,liveStreamingDetails"
             )
@@ -138,15 +152,18 @@ class ytTracker():
                 time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(time+"\tPASS\tCan't find video id: ",videoId)
                 continue
-            output = self.parseVideoInfo(request)
-            channelId, title, sStartTime, aStartTime, aEndTime = output
-
-            if ("'" in title):
-                title = title.replace("'", "'"*2)
+            res = self.parseVideoInfo(res)
+            sStartTime = res['scheduledStartTime']
+            aStartTime = res['actualStartTime']
+            aEndTime = res['actualEndTime']
+            if ("'" in res['title']):
+                res['title'] = res['title'].replace("'", "'"*2)
             sql =   "INSERT IGNORE INTO `videos` ("+\
                     "`videoId`, `channel`, `isForwarded`, `title`,"+\
+                    " `publishedAt`,"+\
                     " `scheduledStartTime`, `actualStartTime`, `actualEndTime`)"
-            sql +=  f"VALUES ('{videoId}', '{channelId}', '0', '{title}', "+\
+            sql +=  f"VALUES ('{videoId}', '{res['channelId']}', '0', '{res['title']}', "+\
+                    f" CAST({res['publishedAt']} AS datetime), "+\
                     f" CAST({sStartTime} AS datetime), CAST({aStartTime} AS datetime), CAST({aEndTime} AS datetime))"
             try:
                 self.cur.execute(sql)
@@ -158,6 +175,7 @@ class ytTracker():
 if __name__ == "__main__":
     tracker = ytTracker()
     res = tracker.loadDataList(select="videoId, scheduledStartTime", type="completed")
+    tracker.updateVideoStatus(res)
     if DEBUG:
         print(type(res), len(res))
         print(res)
