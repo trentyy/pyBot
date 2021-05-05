@@ -27,7 +27,7 @@ PW = db_setting['password']
 DB = db_setting['database']
 
 class  ytWaitingRoom(Cog_Extension):
-    async def updateMsg(self, target_msg: str, videosDict: dict, msg: discord.Message):
+    async def updateMsg(self, target_msg: str, videosDictList, msg: discord.Message):
         # dealing with upcoming msg
         time = datetime.now()
         content =   f"**{target_msg.title()} Stream:**\nUpdate at:"
@@ -35,13 +35,14 @@ class  ytWaitingRoom(Cog_Extension):
         no_result = "\n`There's no result`"
         yt_head_url = "https://www.youtube.com/watch?v="
 
-        if (len(videosDict)==0):
+        if (len(videosDictList)==0):
             await msg.edit(content=content + time_str + no_result,embed=None)
         else:
-            for key, value in videosDict.items():
-                value += timedelta(hours=8)
-                time_str = value.strftime("%m-%d %H:%M") + " (UTC+8)"
-                content +=  f"\n> url: {yt_head_url}{key}" +\
+            for item in videosDictList:
+                sStartTime = item['scheduledStartTime'] + timedelta(hours=8)
+                time_str = sStartTime.strftime("%m-%d %H:%M") + " (UTC+8)"
+                videoId = item['videoId']
+                content +=  f"\n> url: {yt_head_url}{videoId}" +\
                             "\n> scheduledStartTime: "+ time_str
         
             print(content)
@@ -77,8 +78,8 @@ class  ytWaitingRoom(Cog_Extension):
             select="videoId, scheduledStartTime"
             upcoming_videos = self.tracker.loadDataList(select=select, type="live")
 
-            await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming)
-            await self.updateMsg("live", self.live_videos, self.msg_live)
+            await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
+            await self.updateMsg("live", live_videos, self.msg_live)
                 
     def __init__(self, bot):
         
@@ -101,10 +102,11 @@ class  ytWaitingRoom(Cog_Extension):
                 select="videoId, scheduledStartTime"
                 upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
                 select="videoId, scheduledStartTime"
-                upcoming_videos = self.tracker.loadDataList(select=select, type="live")
+                live_videos = self.tracker.loadDataList(select=select, type="live")
                 
-                await self.updateMsg("upcoming", self.upcoming_videos, self.msg_upcoming)
-                await self.updateMsg("live", self.live_videos, self.msg_live)
+                print("updating: ",upcoming_videos, live_videos)
+                await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
+                await self.updateMsg("live", live_videos, self.msg_live)
                 
         self.bot = bot
         self.upcoming_last_search = datetime.now() - timedelta(hours=1)

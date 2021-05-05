@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 use youtube api to update propro member's streaming data
 
@@ -16,18 +17,18 @@ from APIs import youtubeAPI
 DEBUG = False
 
 with open('db_setting.json', 'r') as f:
-    db_setting = json.load(f)
+    db_setting = json.load(f,encoding='utf-8')
     f.close()
 HOST = db_setting['host']
 USER = db_setting['user']
 PW = db_setting['password']
 DB = db_setting['database']
-
+with open('yt_fw_setting.json', 'r',encoding='utf-8') as f:
+    yt_setting = json.load(f)
+    f.close()
+BOX_MEMBER_ID = yt_setting['BOX_MEMBER_ID']
 class ytTracker():
     def __init__(self):
-        with open('db_setting.json', 'r') as f:
-            db_setting = json.load(f)
-            f.close()
         self.connectDB()
 
     def connectDB(self, host=HOST, user=USER,
@@ -64,7 +65,8 @@ class ytTracker():
         self.closeDB()
     def loadDataList(self, select="videoId", type="waiting"):
         # type: waiting, live, completed
-        sql = f"SELECT {select} FROM `videos` WHERE `isForwarded` = 0 AND "
+        sql = f"SELECT {select} FROM `videos` WHERE `isForwarded` = 0 AND "+\
+              "`scheduledStartTime` IS NOT NULL AND "
         if (type=="waiting"):
             sql += "(`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
         elif (type=="live"):
@@ -144,15 +146,19 @@ class ytTracker():
             self.db.commit()
     def insertVideo(self, videoIds):
         for videoId in videoIds:
-            res = youtubeAPI.Videos(
+            request = youtubeAPI.Videos(
                 videoId,
                 part="snippet,liveStreamingDetails"
             )
-            if res['pageInfo']['totalResults']==0:
+            if request['pageInfo']['totalResults']==0:
                 time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(time+"\tPASS\tCan't find video id: ",videoId)
                 continue
-            res = self.parseVideoInfo(res)
+            res = self.parseVideoInfo(request)
+            if (res['channelId'] not in BOX_MEMBER_ID.values()):
+                time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print(time+"\tPASS\tNot publish by members, video id: ",videoId)
+                continue
             sStartTime = res['scheduledStartTime']
             aStartTime = res['actualStartTime']
             aEndTime = res['actualEndTime']
