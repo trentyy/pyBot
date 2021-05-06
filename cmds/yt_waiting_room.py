@@ -24,6 +24,23 @@ PW = db_setting['password']
 DB = db_setting['database']
 
 class  ytWaitingRoom(Cog_Extension):
+    async def updateWaitingRoom(self):
+        waiting_sql = "SELECT `videoId`, `scheduledStartTime` FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND `actualStartTime` IS NULL AND `actualEndTime` IS NULL;"
+        live_sql = "SELECT `videoId`, `scheduledStartTime` FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND  `actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL;"
+        try:
+            upcoming_videos = self.tracker.execute(waiting_sql)
+        except Exception as e:
+            print(waiting_sql)
+            print(e)
+        try:
+            live_videos = self.tracker.execute(live_sql)
+        except Exception as e:
+            print(live_sql)
+            print(e)
+        
+        print("updating: ",upcoming_videos, live_videos)
+        await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
+        await self.updateMsg("live", live_videos, self.msg_live)
     async def updateMsg(self, target_msg: str, videosDictList, msg: discord.Message):
         # dealing with upcoming msg
         time = datetime.now()
@@ -70,15 +87,8 @@ class  ytWaitingRoom(Cog_Extension):
             message = await channel.fetch_message(data.message_id)
                         
             await message.remove_reaction(data.emoji, data.member)
-            waiting_sql = "SELECT videoId, scheduledStartTime FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND `actualStartTime` IS NULL AND `actualEndTime` IS NULL;"
-            live_sql = "SELECT videoId, scheduledStartTime FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND `actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL;"
-            upcoming_videos = self.tracker.execute(waiting_sql)
-            live_videos = self.tracker.execute(live_sql)
-            print("upcoming videos: ", upcoming_videos)
-            print("live videos: ", live_videos)
-
-            await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
-            await self.updateMsg("live", live_videos, self.msg_live)
+            
+            self.updateWaitingRoom()
                 
     def __init__(self, bot):
         async def interval():
@@ -93,14 +103,7 @@ class  ytWaitingRoom(Cog_Extension):
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
-                waiting_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND `actualStartTime` IS NULL AND `actualEndTime` IS NULL;"
-                live_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND  `actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL;"
-                upcoming_videos = self.tracker.execute(waiting_sql)
-                live_videos = self.tracker.execute(live_sql)
-                
-                print("updating: ",upcoming_videos, live_videos)
-                await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
-                await self.updateMsg("live", live_videos, self.msg_live)
+                self.updateWaitingRoom()
                 
                 await asyncio.sleep(SLEEP_TIME)
                 

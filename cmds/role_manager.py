@@ -35,7 +35,7 @@ class  RoleManager(Cog_Extension):
             self.follow_roles = {}
             for key, value in self.roles.items():
                 self.follow_roles[key] = self.guild.get_role(value)
-            print(f"Cog role_manager load roles: {self.follow_roles}")
+            print(f"Cog role_manager loading roles")
 
         # 新增反應貼圖獲取身分組-接收訊息身分組
         if data.message_id == 782810110237868074:
