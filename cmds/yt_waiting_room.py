@@ -88,7 +88,7 @@ class  ytWaitingRoom(Cog_Extension):
                         
             await message.remove_reaction(data.emoji, data.member)
             
-            self.updateWaitingRoom()
+            await self.updateWaitingRoom()
                 
     def __init__(self, bot):
         async def interval():
@@ -103,7 +103,7 @@ class  ytWaitingRoom(Cog_Extension):
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
-                self.updateWaitingRoom()
+                await self.updateWaitingRoom()
                 
                 await asyncio.sleep(SLEEP_TIME)
                 
