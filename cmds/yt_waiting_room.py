@@ -70,10 +70,12 @@ class  ytWaitingRoom(Cog_Extension):
             message = await channel.fetch_message(data.message_id)
                         
             await message.remove_reaction(data.emoji, data.member)
-            waiting_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
-            live_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL);"
+            waiting_sql = "SELECT videoId, scheduledStartTime FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
+            live_sql = "SELECT videoId, scheduledStartTime FROM `videos` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL);"
             upcoming_videos = self.tracker.execute(waiting_sql)
             live_videos = self.tracker.execute(live_sql)
+            print("upcoming videos: ", upcoming_videos)
+            print("live videos: ", live_videos)
 
             await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
             await self.updateMsg("live", live_videos, self.msg_live)
