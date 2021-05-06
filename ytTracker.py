@@ -90,6 +90,7 @@ class ytTracker():
             print(time+"\t[Error] \tytTracker.loadDataList while execute sql:")
             print(sql)
             raise e
+        self.closeDB()
         return result
     def parseVideoInfo(self, request):
         try:
@@ -151,7 +152,7 @@ class ytTracker():
             sql += " WHERE `videos`.`videoId` = " + "'"+videoId+"'"
             self.cur.execute(sql)
             self.db.commit()
-
+        self.closeDB()
     def insertVideo(self, videoIds):
         self.connectDB()
         for videoId in videoIds:
@@ -187,12 +188,19 @@ class ytTracker():
                 print(sql)
                 self.connectDB()
             self.db.commit()
-
+        self.closeDB()
+    def execute(self, sql):
+        self.connectDB()
+        self.cur.execute(sql)
+        res = self.cur.fetchall()
+        self.closeDB()
+        return res
     def setForwardedVideo(self, videoId):
         self.connectDB()
         sql = f"UPDATE `propro_guild`.`videos` SET `isForwarded`='1' WHERE  `videoId`='{videoId}';"
         self.cur.execute(sql)
         self.db.commit()
+        self.closeDB()
 
 def main():
     tracker = ytTracker()

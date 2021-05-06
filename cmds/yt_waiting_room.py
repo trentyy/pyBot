@@ -70,10 +70,10 @@ class  ytWaitingRoom(Cog_Extension):
             message = await channel.fetch_message(data.message_id)
                         
             await message.remove_reaction(data.emoji, data.member)
-            select="videoId, scheduledStartTime"
-            upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
-            select="videoId, scheduledStartTime"
-            upcoming_videos = self.tracker.loadDataList(select=select, type="live")
+            waiting_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
+            live_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL);"
+            upcoming_videos = self.tracker.execute(waiting_sql)
+            live_videos = self.tracker.execute(live_sql)
 
             await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
             await self.updateMsg("live", live_videos, self.msg_live)
@@ -91,10 +91,10 @@ class  ytWaitingRoom(Cog_Extension):
             self.msg_upcoming = await channel.fetch_message(826197268055064576)
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
-                select="videoId, scheduledStartTime"
-                upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
-                select="videoId, scheduledStartTime"
-                live_videos = self.tracker.loadDataList(select=select, type="live")
+                waiting_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NULL OR `actualEndTime` IS NULL);"
+                live_sql = "SELECT `videoId`, `scheduledStartTime` WHERE `scheduledStartTime` IS NOT NULL AND (`actualStartTime` IS NOT NULL AND `actualEndTime` IS NULL);"
+                upcoming_videos = self.tracker.execute(waiting_sql)
+                live_videos = self.tracker.execute(live_sql)
                 
                 print("updating: ",upcoming_videos, live_videos)
                 await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
