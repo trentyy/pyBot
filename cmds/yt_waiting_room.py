@@ -71,9 +71,9 @@ class  ytWaitingRoom(Cog_Extension):
                         
             await message.remove_reaction(data.emoji, data.member)
             select="videoId, scheduledStartTime"
-            upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
+            upcoming_videos = self.tracker.loadDataList(select=select, stream_type="waiting")
             select="videoId, scheduledStartTime"
-            upcoming_videos = self.tracker.loadDataList(select=select, type="live")
+            live_videos = self.tracker.loadDataList(select=select, stream_type="live")
 
             await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
             await self.updateMsg("live", live_videos, self.msg_live)
@@ -92,9 +92,9 @@ class  ytWaitingRoom(Cog_Extension):
             self.msg_live = await channel.fetch_message(826197370353614911)
             while not self.bot.is_closed():
                 select="videoId, scheduledStartTime"
-                upcoming_videos = self.tracker.loadDataList(select=select, type="waiting")
+                upcoming_videos = self.tracker.loadDataList(select=select, stream_type="waiting")
                 select="videoId, scheduledStartTime"
-                live_videos = self.tracker.loadDataList(select=select, type="live")
+                live_videos = self.tracker.loadDataList(select=select, stream_type="live")
                 
                 print("updating: ",upcoming_videos, live_videos)
                 await self.updateMsg("upcoming", upcoming_videos, self.msg_upcoming)
