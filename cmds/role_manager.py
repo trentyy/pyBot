@@ -26,10 +26,8 @@ class  RoleManager(Cog_Extension):
             f"WHERE `guild_id`={data.guild_id} AND `channel_id`={data.channel_id} "
             f"AND `message_id`={data.message_id} AND `emoji`='{data.emoji}'"
             )
-        print(sql)
         if (cursor.execute(sql)!=0):
-            print("====data====")
-            print(data)
+            print(sql)
             # 新增反應貼圖獲取身分組-接收訊息身分組
             # 通知身分組
             role_id = cursor.fetchall()[0][0]
@@ -46,8 +44,8 @@ class  RoleManager(Cog_Extension):
             f"WHERE `guild_id`={data.guild_id} AND `channel_id`={data.channel_id} "
             f"AND `message_id`={data.message_id}"
             )
-        print(sql)
         if (cursor.execute(sql)!=0):
+            print(sql)
             # 新增反應貼圖獲取身分組-選顏色身分組
             result = cursor.fetchall()
             guild = self.bot.get_guild(data.guild_id)
@@ -78,11 +76,11 @@ class  RoleManager(Cog_Extension):
             f"AND `message_id`={data.message_id} AND `emoji`='{data.emoji}'"
             )
         if (cursor.execute(sql)!=0):
+            print(sql)
             role_id = cursor.fetchall()[0][0]
             guild = self.bot.get_guild(data.guild_id)
             role = guild.get_role(role_id)
             member = await guild.fetch_member(data.user_id)
-            
             
             print(f"Remove {member.mention} from role: {role}")
             bot_channel = guild.get_channel(jdata["chennel_bot-history"]) # "機器人操作履歷頻道"
