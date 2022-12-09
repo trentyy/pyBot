@@ -17,7 +17,7 @@ if len(sys.argv) > 1:
 @bot.event
 async def on_ready():
     print(f"Bot host by `{socket.gethostname()}` is online")
-    channel = bot.get_channel(int(jdata['chennel_bot-playground']))
+    channel = bot.get_channel(int(jdata['chennel_bot-history']))
     await channel.send(f"`{socket.gethostname()}` As your service!")
 
 # Core的功能僅開放guild_permissions.administrator使用
