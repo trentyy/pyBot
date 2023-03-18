@@ -1,6 +1,7 @@
 comds/__pycache__
 test.py
 .vs
+.vscode
 setting.json
 twitter_api.json
 yt_api.json
