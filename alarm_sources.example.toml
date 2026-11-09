@@ -1,0 +1,38 @@
+# PostgreSQL 輪詢設定範例。複製成 alarm_sources.toml（不會被 git 追蹤）後修改。
+# 只有 bot 主機管理者能改這個檔案；Discord 裡只能挑選這裡定義好的數值來設警報規則。
+# 修改後需重新啟動：sudo systemctl restart dc-manager
+
+[[postgres]]
+name = "lab"
+# 建議用唯讀帳號。bot 連線時也會強制唯讀（default_transaction_read_only）。
+dsn = "postgresql://readonly:密碼@192.168.1.20:5432/lab"
+# 或把連線字串放在 .env，這裡只寫變數名稱：
+# dsn_env = "LAB_PG_DSN"
+
+# 資料表的 timestamp 欄位若「沒有時區」，視為這個時區
+timezone = "Asia/Taipei"
+
+# 寫法一：一個查詢對應一個數值，取第一列的 value（和選填的 ts）
+[[postgres.metric]]
+key = "furnace1.temp"
+query = """
+SELECT value, recorded_at AS ts
+FROM temperature
+WHERE instrument = 'F1'
+ORDER BY recorded_at DESC
+LIMIT 1
+"""
+interval = 30                    # 每幾秒查一次（最短 5 秒）
+guilds = [123456789012345678]    # 哪些 Discord 伺服器可以使用這個數值
+
+# 寫法二：一個查詢取得多個數值，結果要有 metric 欄位，名稱前面會加上 prefix
+# 例如 instrument = 'F2' → temp.F2
+[[postgres.metric]]
+prefix = "temp."
+query = """
+SELECT DISTINCT ON (instrument) instrument AS metric, value, recorded_at AS ts
+FROM temperature
+ORDER BY instrument, recorded_at DESC
+"""
+interval = 30
+guilds = [123456789012345678]

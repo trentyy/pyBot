@@ -1,10 +1,14 @@
-comds/__pycache__
+# dc-manager runtime files
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
 test.py
 .vs
 .vscode
 setting.json
-twitter_api.json
-yt_api.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -112,6 +116,7 @@ celerybeat.pid
 # Environments
 dcBot-env/
 .env
+alarm_sources.toml
 .venv
 env/
 venv/
@@ -136,7 +141,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-cmds/__pycache__/main.cpython-38.pyc
-cmds/__pycache__/event.cpython-38.pyc
-errmsg.txt
-db_setting.json

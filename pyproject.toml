@@ -1,0 +1,27 @@
+[project]
+name = "dc-manager"
+version = "2.0.0"
+description = "多伺服器 Discord 身分組管理 bot（反應身分組、按鈕面板、自動身分組、週期提醒）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "discord.py>=2.4,<3",
+    "aiosqlite>=0.20",
+    "python-dotenv>=1.0",
+    "tzdata",
+    "asyncpg>=0.29",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+dc-manager = "dc_manager.__main__:main"
+
+[tool.setuptools]
+packages = ["dc_manager", "dc_manager.cogs", "dc_manager.alarms"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

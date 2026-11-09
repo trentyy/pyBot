@@ -1,0 +1,20 @@
+[Unit]
+Description=dc-manager Discord role bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/.venv/bin/python -m dc_manager
+Restart=always
+RestartSec=10
+# 安全性設定：只允許寫入 data/ 與 logs/
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=__DIR__/data __DIR__/logs
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
