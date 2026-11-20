@@ -68,7 +68,18 @@ class DcManager(commands.Bot):
         log.info("資料庫已載入，追蹤 %d 則身分組訊息", len(self.tracked_messages))
         for ext in EXTENSIONS:
             await self.load_extension(ext)
-        await self.sync_commands()
+        try:
+            await self.sync_commands()
+        except discord.HTTPException as e:
+            # 同步失敗只影響指令選單是否更新，不影響按鈕、反應、提醒等功能，所以不讓 bot 結束
+            log.error(
+                "斜線指令同步失敗（HTTP %s，錯誤碼 %s：%s），bot 會繼續執行，但指令選單不會更新。"
+                "可能原因：DEV_GUILD_ID 的伺服器不存在或 bot 不在裡面、邀請 bot 時沒有勾選 "
+                "applications.commands、被 Discord 限流（稍後重啟再試）。",
+                e.status,
+                e.code,
+                e.text,
+            )
 
     async def sync_commands(self) -> None:
         if self.config.dev_guild_id:
