@@ -40,6 +40,9 @@ class Config:
     alarm_http_port: int = 8080
     # 儀器警報：資料庫輪詢設定檔（檔案不存在就不輪詢）
     alarm_sources_file: Path | None = None
+    # Prometheus 指標端點（一直開著，不受 ALARM_HTTP_ENABLED 影響）
+    metrics_host: str = "0.0.0.0"
+    metrics_port: int = 9107
 
     @classmethod
     def load(cls, env_file: Path | None = None) -> "Config":
@@ -64,4 +67,6 @@ class Config:
             alarm_http_host=(os.getenv("ALARM_HTTP_HOST") or "0.0.0.0").strip(),
             alarm_http_port=int(os.getenv("ALARM_HTTP_PORT") or 8080),
             alarm_sources_file=path("ALARM_SOURCES_FILE", "alarm_sources.toml"),
+            metrics_host=(os.getenv("METRICS_HOST") or "0.0.0.0").strip(),
+            metrics_port=int(os.getenv("METRICS_PORT") or 9107),
         )

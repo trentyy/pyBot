@@ -12,6 +12,7 @@ from discord.ext import commands
 
 from .config import Config
 from .db import Database
+from .metrics import MetricsServer
 from .utils import UserError
 
 log = logging.getLogger(__name__)
@@ -52,6 +53,9 @@ class DcManager(commands.Bot):
             weakref.WeakValueDictionary()
         )
         self.tree.on_error = self.on_app_command_error
+        # dcbot_up 的依據：登入完成且 Gateway 連線中（on_ready／on_resumed 設為 True，斷線設為 False）
+        self.gateway_connected = False
+        self.metrics_server = MetricsServer(self, config.metrics_host, config.metrics_port)
 
     def member_lock(self, guild_id: int, user_id: int) -> asyncio.Lock:
         """同一個成員的身分組操作排隊執行，避免連點造成「唯一」模式錯亂。"""
@@ -63,6 +67,7 @@ class DcManager(commands.Bot):
         return lock
 
     async def setup_hook(self) -> None:
+        await self.metrics_server.start()  # 失敗只記錄，不影響 bot
         await self.db.connect()
         self.tracked_messages = await self.db.all_message_ids()
         log.info("資料庫已載入，追蹤 %d 則身分組訊息", len(self.tracked_messages))
@@ -102,9 +107,18 @@ class DcManager(commands.Bot):
 
     async def on_ready(self) -> None:
         assert self.user is not None
+        self.gateway_connected = True
         log.info("已登入 %s (id=%s)，服務 %d 個伺服器", self.user, self.user.id, len(self.guilds))
 
+    async def on_resumed(self) -> None:
+        self.gateway_connected = True
+
+    async def on_disconnect(self) -> None:
+        self.gateway_connected = False
+
     async def close(self) -> None:
+        self.gateway_connected = False
+        await self.metrics_server.stop()
         await super().close()
         await self.db.close()
 

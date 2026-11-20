@@ -107,6 +107,7 @@ docker compose stop && docker compose run --rm dc-manager --sync
 - 主機重開機會自動啟動；bot 異常結束最多自動重啟 5 次（`restart: on-failure:5`），所以 token 錯誤這類問題不會無限重啟。容器停下後用 `docker compose logs` 看原因，修好 `.env` 再 `docker compose up -d --force-recreate`。
 - 儀器警報的 PostgreSQL 設定檔放在 `config/alarm_sources.toml`。若 PostgreSQL 跟 bot 在同一台主機，`dsn` 的主機名稱請寫 `host.docker.internal`（容器裡的 `localhost` 指的是容器自己）。
 - 容器內的資料庫、log、設定檔路徑是固定的，`.env` 裡的 `DB_PATH`、`LOG_DIR`、`ALARM_SOURCES_FILE`、`ALARM_HTTP_HOST` 在 Docker 下不會生效；`ALARM_HTTP_PORT` 決定主機對外的 port。
+- Prometheus 指標：容器內 `0.0.0.0:9107`，路徑 `/metrics`，一直開著（不受 `ALARM_HTTP_ENABLED` 影響）。主機端綁定位址由 `.env` 的 `METRICS_BIND` 決定，預設 `127.0.0.1`；部署到樹莓派請設成 Tailscale IP，再用 `curl http://<Tailscale IP>:9107/metrics` 驗證。指標說明見下方「監控指標」。
 - 從舊的 systemd 版改用 Docker：先 `sudo systemctl disable --now dc-manager`，在同一個資料夾執行上面的 `docker compose up -d --build` 即可沿用原本的 `data/`；`alarm_sources.toml` 要移到 `config/` 底下。
 
 ### 不用 Docker：systemd 服務
@@ -254,6 +255,21 @@ PostgreSQL <──定期查詢───┘
 - **提醒有發但沒通知到人**：身分組不允許被提及，見上方「週期提醒」最後一點。
 - **儀器電腦送不進來**：先在儀器電腦開 `http://<樹莓派IP>:8080/api/v1/health`。連不上 → 檢查 `.env` 的 `ALARM_HTTP_ENABLED`、`ALARM_HTTP_PORT`、樹莓派防火牆；回 401 → token 錯誤或已 rotate。
 - **一直跳「沒有收到資料」**：PostgreSQL 的 timestamp 若沒有時區，檢查 `alarm_sources.toml` 的 `timezone` 是否正確；`docker compose logs`（systemd 版用 `journalctl -u dc-manager`）可看查詢錯誤。
+
+## 監控指標
+
+`GET http://<主機>:9107/metrics`（Prometheus text format；不用 Docker 時用 `METRICS_HOST`、`METRICS_PORT` 調整，預設 `0.0.0.0:9107`）。
+
+| 指標 | 型別 | 說明 |
+| --- | --- | --- |
+| `dcbot_up` | gauge | 已登入且與 Gateway 連線中為 1，斷線為 0 |
+| `dcbot_guilds` | gauge | 目前服務的伺服器數 |
+| `dcbot_latency_seconds` | gauge | Gateway 延遲（未連線時不輸出） |
+| `dcbot_start_time_seconds` | gauge | 程序啟動的 Unix 時間 |
+| `dcbot_log_messages_total{level="warning"\|"error"\|"critical"}` | counter | 累計日誌筆數（root logger，含 discord.py）；重啟歸零 |
+| `dcbot_last_error_timestamp_seconds` | gauge | 最後一次 ERROR 以上日誌的 Unix 時間；從未發生就不輸出 |
+
+注意 `LOG_LEVEL` 設得比 WARNING 高時，被過濾掉的日誌不會被計數。端點啟動失敗（例如 port 被占用）只會寫一筆 error log，bot 照常運作。
 
 ## 專案結構
 

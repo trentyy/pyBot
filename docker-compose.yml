@@ -19,6 +19,8 @@ services:
       ALARM_SOURCES_FILE: /app/config/alarm_sources.toml
       ALARM_HTTP_HOST: 0.0.0.0
       ALARM_HTTP_PORT: "8080"
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: "9107"
       TZ: ${TZ:-Asia/Taipei}
       # 寫入 data/、logs/ 時使用的 uid / gid
       PUID: ${PUID:-1000}
@@ -30,6 +32,8 @@ services:
     ports:
       # 儀器警報區網接收器；主機 port 取自 .env 的 ALARM_HTTP_PORT
       - "${ALARM_HTTP_PORT:-8080}:8080"
+      # Prometheus 指標；預設只綁本機，部署到樹莓派時在 .env 設 METRICS_BIND=<Tailscale IP>
+      - "${METRICS_BIND:-127.0.0.1}:9107:9107"
     extra_hosts:
       # 讓容器用 host.docker.internal 連到主機本身（例如同一台的 PostgreSQL）
       - "host.docker.internal:host-gateway"

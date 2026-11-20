@@ -13,6 +13,7 @@ import discord
 from . import __version__
 from .bot import DcManager
 from .config import Config
+from .metrics import log_counter
 
 EXIT_SIGTERM = 143
 
@@ -34,6 +35,7 @@ def setup_logging(config: Config) -> None:
     root.setLevel(config.log_level)
     root.addHandler(file_handler)
     root.addHandler(stream_handler)
+    root.addHandler(log_counter)  # Prometheus 的 dcbot_log_messages_total
     logging.getLogger("discord.http").setLevel(logging.WARNING)
 
 

@@ -33,4 +33,6 @@ RUN chmod 755 /usr/local/bin/entrypoint.sh \
 
 # 儀器警報區網接收器（ALARM_HTTP_ENABLED=true 才會監聽）
 EXPOSE 8080
+# Prometheus 指標（/metrics，一直開著）
+EXPOSE 9107
 ENTRYPOINT ["entrypoint.sh"]
