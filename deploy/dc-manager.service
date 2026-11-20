@@ -9,6 +9,8 @@ User=__USER__
 WorkingDirectory=__DIR__
 ExecStart=__DIR__/.venv/bin/python -m dc_manager
 Restart=always
+# 收到 SIGTERM 時程式以 143 結束，視為正常停止
+SuccessExitStatus=143
 RestartSec=10
 # 安全性設定：只允許寫入 data/ 與 logs/
 NoNewPrivileges=true

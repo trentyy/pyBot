@@ -1,0 +1,7 @@
+# 只把建置需要的檔案送進 Docker（.env、資料庫、log 都不會進映像檔）
+*
+!dc_manager/
+!docker/
+!requirements.txt
+**/__pycache__
+**/*.py[cod]

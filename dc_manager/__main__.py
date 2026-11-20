@@ -5,6 +5,7 @@ import argparse
 import asyncio
 import logging
 import logging.handlers
+import signal
 import sys
 
 import discord
@@ -12,6 +13,8 @@ import discord
 from . import __version__
 from .bot import DcManager
 from .config import Config
+
+EXIT_SIGTERM = 143
 
 
 def setup_logging(config: Config) -> None:
@@ -34,10 +37,28 @@ def setup_logging(config: Config) -> None:
     logging.getLogger("discord.http").setLevel(logging.WARNING)
 
 
+def install_shutdown_handler() -> None:
+    """docker stop / systemctl stop 會送 SIGTERM：比照 Ctrl+C 取消主程式，
+    由 async with 正常關閉 bot，讓資料寫回資料庫。"""
+    loop = asyncio.get_running_loop()
+    main_task = asyncio.current_task()
+
+    def on_sigterm() -> None:
+        logging.getLogger(__name__).info("收到 SIGTERM，正在關閉")
+        if main_task is not None:
+            main_task.cancel()
+
+    try:
+        loop.add_signal_handler(signal.SIGTERM, on_sigterm)
+    except (NotImplementedError, RuntimeError):  # Windows 不支援
+        pass
+
+
 async def run(force_sync: bool) -> None:
     config = Config.load()
     setup_logging(config)
     logging.getLogger(__name__).info("dc-manager %s 啟動中（discord.py %s）", __version__, discord.__version__)
+    install_shutdown_handler()
     bot = DcManager(config, force_sync=force_sync)
     async with bot:
         try:
@@ -63,6 +84,9 @@ def main() -> None:
         asyncio.run(run(args.sync))
     except KeyboardInterrupt:
         pass
+    except asyncio.CancelledError:
+        # 收到 SIGTERM：以 143（128+15）結束，見 docker-compose.yml 的 restart 說明
+        sys.exit(EXIT_SIGTERM)
 
 
 if __name__ == "__main__":

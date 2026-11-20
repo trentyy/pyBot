@@ -48,47 +48,76 @@ bot 是**主動向 Discord 連線**（Gateway WebSocket），所有斜線指令�
 
 > bot 加入超過 100 個伺服器後，Discord 會要求驗證 bot 才能繼續使用 SERVER MEMBERS INTENT。
 
-## 2. 部署到樹莓派
+## 2. 部署到樹莓派（Docker）
 
-需求：Raspberry Pi OS Bookworm 以上（Python 3.11+）。
+需求：64 位元 Raspberry Pi OS（或任何能跑 Docker 的 Linux / Windows / macOS）。
+
+安裝 Docker（已安裝可略過，裝完重新登入讓群組生效）：
 
 ```bash
-git clone <repo網址> dc-manager
+curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker $USER
+```
+
+下載專案並建立設定檔：
+
+```bash
+git clone <repo網址> dc-manager && cd dc-manager
 ```
 
 ```bash
-cd dc-manager && bash deploy/install.sh
+cp .env.example .env && nano .env
 ```
 
-```bash
-nano .env
-```
-
-填入 `DISCORD_TOKEN` 後啟動：
+填入 `DISCORD_TOKEN` 後建置並啟動（第一次建置在樹莓派上要幾分鐘）：
 
 ```bash
-sudo systemctl start dc-manager
+docker compose up -d --build
 ```
 
 常用指令：
 
 ```bash
-sudo systemctl status dc-manager
+docker compose ps
 ```
 
 ```bash
-journalctl -u dc-manager -f
+docker compose logs -f
+```
+
+```bash
+docker compose restart
 ```
 
 更新版本：
 
 ```bash
-git pull && bash deploy/install.sh
+git pull && docker compose up -d --build
 ```
 
-- 資料庫是 SQLite，存在 `data/dc-manager.db`，不需要另外架 MySQL。備份只要複製這個檔案（建議先停止服務）。
-- log 寫在 `logs/dc-manager.log`，自動輪替（每檔 2MB，保留 5 份）。
-- 服務當掉或斷網會自動重啟 / 重連。
+強制重新同步斜線指令（平常不需要，指令有變更時會自動同步）：
+
+```bash
+docker compose stop && docker compose run --rm dc-manager --sync
+```
+
+看到「已全域同步」後按 Ctrl+C，再 `docker compose up -d`。
+
+- 資料庫是 SQLite，存在主機的 `data/dc-manager.db`，不需要另外架 MySQL。備份只要複製這個檔案（建議先 `docker compose stop`）。
+- log 寫在主機的 `logs/dc-manager.log`（每檔 2MB，保留 5 份），`docker compose logs` 也看得到。
+- 主機重開機會自動啟動；bot 異常結束最多自動重啟 5 次（`restart: on-failure:5`），所以 token 錯誤這類問題不會無限重啟。容器停下後用 `docker compose logs` 看原因，修好 `.env` 再 `docker compose up -d --force-recreate`。
+- 儀器警報的 PostgreSQL 設定檔放在 `config/alarm_sources.toml`。若 PostgreSQL 跟 bot 在同一台主機，`dsn` 的主機名稱請寫 `host.docker.internal`（容器裡的 `localhost` 指的是容器自己）。
+- 容器內的資料庫、log、設定檔路徑是固定的，`.env` 裡的 `DB_PATH`、`LOG_DIR`、`ALARM_SOURCES_FILE`、`ALARM_HTTP_HOST` 在 Docker 下不會生效；`ALARM_HTTP_PORT` 決定主機對外的 port。
+- 從舊的 systemd 版改用 Docker：先 `sudo systemctl disable --now dc-manager`，在同一個資料夾執行上面的 `docker compose up -d --build` 即可沿用原本的 `data/`；`alarm_sources.toml` 要移到 `config/` 底下。
+
+### 不用 Docker：systemd 服務
+
+需求：Raspberry Pi OS Bookworm 以上（Python 3.11+）。
+
+```bash
+cd dc-manager && bash deploy/install.sh
+```
+
+填好 `.env` 後 `sudo systemctl start dc-manager`，log 用 `journalctl -u dc-manager -f` 查看；更新版本用 `git pull && bash deploy/install.sh`。這個方式的 PostgreSQL 設定檔放在專案根目錄的 `alarm_sources.toml`。
 
 ## 3. 本機開發（conda）
 
@@ -209,12 +238,13 @@ PostgreSQL <──定期查詢───┘
 
 - **身分組發不出去**：到伺服器設定把 bot 的身分組拖到要發放的身分組**上面**。`/settings show` 可檢查。
 - **「唯一」模式的反應沒被收回**：bot 需要該頻道的「管理訊息」權限。
+- **容器自己停了**：`docker compose logs` 看原因，最常見是 `.env` 的 `DISCORD_TOKEN` 沒填或錯誤。
 - **啟動時出現 PrivilegedIntentsRequired**：Developer Portal 沒開 SERVER MEMBERS INTENT，開啟或設 `ENABLE_MEMBERS_INTENT=false`。
 - **看不到斜線指令**：全域同步需要幾分鐘；也可以重新整理 Discord（Ctrl+R）。
 - **提醒任務自己暫停了**：提醒頻道被刪除或 bot 失去發言權限，紀錄頻道會寫原因；修好後 `/reminder resume`。
 - **提醒有發但沒通知到人**：身分組不允許被提及，見上方「週期提醒」最後一點。
-- **儀器電腦送不進來**：先在儀器電腦開 `http://<樹莓派IP>:8080/api/v1/health`。連不上 → 檢查 `.env` 的 `ALARM_HTTP_ENABLED`、樹莓派防火牆；回 401 → token 錯誤或已 rotate。
-- **一直跳「沒有收到資料」**：PostgreSQL 的 timestamp 若沒有時區，檢查 `alarm_sources.toml` 的 `timezone` 是否正確；`journalctl -u dc-manager` 可看查詢錯誤。
+- **儀器電腦送不進來**：先在儀器電腦開 `http://<樹莓派IP>:8080/api/v1/health`。連不上 → 檢查 `.env` 的 `ALARM_HTTP_ENABLED`、`ALARM_HTTP_PORT`、樹莓派防火牆；回 401 → token 錯誤或已 rotate。
+- **一直跳「沒有收到資料」**：PostgreSQL 的 timestamp 若沒有時區，檢查 `alarm_sources.toml` 的 `timezone` 是否正確；`docker compose logs`（systemd 版用 `journalctl -u dc-manager`）可看查詢錯誤。
 
 ## 專案結構
 
@@ -240,6 +270,7 @@ dc_manager/
   schedule.py      週期時間計算
   targets.py       提醒對象與管理權限（提醒、警報共用）
 tools/send_reading.py  儀器電腦用的送數值腳本
-deploy/            樹莓派 systemd 服務與安裝腳本
+Dockerfile, docker-compose.yml, docker/entrypoint.sh  Docker 部署
+deploy/            樹莓派 systemd 服務與安裝腳本（不用 Docker 時）
 tests/             pytest 測試
 ```

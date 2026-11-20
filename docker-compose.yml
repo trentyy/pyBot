@@ -1,0 +1,40 @@
+# 啟動：docker compose up -d --build
+# 設定寫在 .env（從 .env.example 複製）。下方 environment 會覆蓋容器內的路徑設定。
+services:
+  dc-manager:
+    build: .
+    image: dc-manager:latest
+    container_name: dc-manager
+    # 異常結束最多自動重啟 5 次，token 錯誤這類重試也沒用的問題不會無限重啟。
+    # 手動 docker compose stop 不會被重啟；主機重開機後會自動啟動
+    # （程式收到 SIGTERM 以 143 結束，on-failure 政策因此會在開機後把它帶起來）。
+    restart: on-failure:5
+    init: true  # 由 tini 轉送 docker stop 的訊號，bot 才能正常關閉
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      # 容器內的路徑與 port 固定，不受 .env 影響
+      DB_PATH: /app/data/dc-manager.db
+      LOG_DIR: /app/logs
+      ALARM_SOURCES_FILE: /app/config/alarm_sources.toml
+      ALARM_HTTP_HOST: 0.0.0.0
+      ALARM_HTTP_PORT: "8080"
+      TZ: ${TZ:-Asia/Taipei}
+      # 寫入 data/、logs/ 時使用的 uid / gid
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+    volumes:
+      - ./data:/app/data          # SQLite 資料庫
+      - ./logs:/app/logs          # log 檔
+      - ./config:/app/config:ro   # 放 alarm_sources.toml（選用）
+    ports:
+      # 儀器警報區網接收器；主機 port 取自 .env 的 ALARM_HTTP_PORT
+      - "${ALARM_HTTP_PORT:-8080}:8080"
+    extra_hosts:
+      # 讓容器用 host.docker.internal 連到主機本身（例如同一台的 PostgreSQL）
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
