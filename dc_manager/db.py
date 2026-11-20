@@ -15,7 +15,7 @@ MODE_UNIQUE = "unique"  # 同一則訊息只能擁有其中一個身分組
 MODE_VERIFY = "verify"  # 只能取得，取消反應不會移除
 MODES = (MODE_NORMAL, MODE_UNIQUE, MODE_VERIFY)
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 # 每個版本的 migration，依序執行；之後改表結構時往後加即可
 MIGRATIONS: dict[int, str] = {
@@ -184,6 +184,20 @@ MIGRATIONS: dict[int, str] = {
     );
     CREATE INDEX ix_alarm_events_rule ON alarm_events (rule_id, status);
     """,
+    4: """
+    -- 每週自動發送的雙週提醒日程
+    CREATE TABLE agenda_digest (
+        guild_id       INTEGER PRIMARY KEY,
+        channel_id     INTEGER NOT NULL,
+        weekday        INTEGER NOT NULL,  -- 0 = 星期一
+        at_time        TEXT NOT NULL,     -- HH:MM，使用伺服器時區
+        last_handled   INTEGER            -- 已處理的預定發送時間（UTC timestamp）
+    );
+    """,
+    5: """
+    -- 每月規則：NULL 表示沿用起點日期的「幾號」；"day:15" 每月 15 號；"nth:2:3" 每月第 2 個星期四
+    ALTER TABLE reminders ADD COLUMN month_rule TEXT;
+    """,
 }
 
 OPEN_STATUSES = ("pending", "snoozed")
@@ -195,6 +209,15 @@ class GuildSettings:
     log_channel_id: int | None = None
     dm_notify: bool = False
     timezone: str | None = None
+
+
+@dataclass(frozen=True)
+class Digest:
+    guild_id: int
+    channel_id: int
+    weekday: int
+    at_time: str
+    last_handled: int | None
 
 
 @dataclass(frozen=True)
@@ -225,6 +248,7 @@ class Reminder:
     next_due_at: int | None
     active: bool
     created_by: int
+    month_rule: str | None = None
 
 
 @dataclass(frozen=True)
@@ -248,7 +272,7 @@ class Occurrence:
 REMINDER_COLUMNS = (
     "id, guild_id, channel_id, title, description, target_user_id, target_role_id, manager_role_id, "
     "interval_unit, interval_count, anchor_local, timezone, schedule_mode, max_postpone_days, "
-    "next_due_at, active, created_by"
+    "next_due_at, active, created_by, month_rule"
 )
 OCCURRENCE_COLUMNS = (
     "id, reminder_id, due_at, remind_at, status, postponed_days, channel_id, message_id, "
@@ -258,7 +282,7 @@ OCCURRENCE_COLUMNS = (
 REMINDER_EDITABLE = {
     "channel_id", "title", "description", "target_user_id", "target_role_id", "manager_role_id",
     "interval_unit", "interval_count", "anchor_local", "timezone", "schedule_mode",
-    "max_postpone_days", "next_due_at", "active",
+    "max_postpone_days", "next_due_at", "active", "month_rule",
 }
 
 
@@ -420,6 +444,42 @@ class Database:
             "ON CONFLICT (guild_id) DO UPDATE SET dm_notify = excluded.dm_notify",
             (guild_id, int(enabled)),
         )
+        await self.conn.commit()
+
+    # ---------- 每週日程 ----------
+
+    async def set_digest(
+        self, guild_id: int, channel_id: int, weekday: int, at_time: str, last_handled: int | None
+    ) -> None:
+        await self.conn.execute(
+            "INSERT INTO agenda_digest (guild_id, channel_id, weekday, at_time, last_handled) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT (guild_id) DO UPDATE SET channel_id = excluded.channel_id, "
+            "weekday = excluded.weekday, at_time = excluded.at_time, last_handled = excluded.last_handled",
+            (guild_id, channel_id, weekday, at_time, last_handled),
+        )
+        await self.conn.commit()
+
+    async def get_digest(self, guild_id: int) -> Digest | None:
+        async with self.conn.execute(
+            "SELECT guild_id, channel_id, weekday, at_time, last_handled FROM agenda_digest WHERE guild_id = ?",
+            (guild_id,),
+        ) as cur:
+            row = await cur.fetchone()
+        return Digest(*row) if row else None
+
+    async def all_digests(self) -> list[Digest]:
+        async with self.conn.execute(
+            "SELECT guild_id, channel_id, weekday, at_time, last_handled FROM agenda_digest"
+        ) as cur:
+            return [Digest(*row) for row in await cur.fetchall()]
+
+    async def remove_digest(self, guild_id: int) -> bool:
+        cur = await self.conn.execute("DELETE FROM agenda_digest WHERE guild_id = ?", (guild_id,))
+        await self.conn.commit()
+        return cur.rowcount > 0
+
+    async def mark_digest(self, guild_id: int, handled: int) -> None:
+        await self.conn.execute("UPDATE agenda_digest SET last_handled = ? WHERE guild_id = ?", (handled, guild_id))
         await self.conn.commit()
 
     # ---------- role messages ----------
@@ -589,6 +649,7 @@ class Database:
         await self.conn.execute("DELETE FROM guild_settings WHERE guild_id = ?", (guild_id,))
         await self.conn.execute("DELETE FROM reminders WHERE guild_id = ?", (guild_id,))
         await self.conn.execute("DELETE FROM reminder_managers WHERE guild_id = ?", (guild_id,))
+        await self.conn.execute("DELETE FROM agenda_digest WHERE guild_id = ?", (guild_id,))
         for table in ("alarm_rules", "alarm_sources", "alarm_managers", "alarm_metrics"):
             await self.conn.execute(f"DELETE FROM {table} WHERE guild_id = ?", (guild_id,))
         await self.conn.commit()
@@ -650,15 +711,16 @@ class Database:
         max_postpone_days: int,
         next_due_at: int | None,
         created_by: int,
+        month_rule: str | None = None,
     ) -> Reminder:
         cur = await self.conn.execute(
             "INSERT INTO reminders (guild_id, channel_id, title, description, target_user_id, target_role_id, "
             "manager_role_id, interval_unit, interval_count, anchor_local, timezone, schedule_mode, "
-            "max_postpone_days, next_due_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "max_postpone_days, next_due_at, created_by, month_rule) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 guild_id, channel_id, title, description, target_user_id, target_role_id, manager_role_id,
                 interval_unit, interval_count, anchor_local, timezone, schedule_mode, max_postpone_days,
-                next_due_at, created_by,
+                next_due_at, created_by, month_rule,
             ),
         )
         await self.conn.commit()
@@ -762,6 +824,26 @@ class Database:
             f"SELECT {OCCURRENCE_COLUMNS} FROM reminder_occurrences "
             "WHERE reminder_id = ? AND status IN ('pending', 'snoozed') ORDER BY id",
             (reminder_id,),
+        ) as cur:
+            return [Occurrence(*row) for row in await cur.fetchall()]
+
+    async def occurrences_in_range(self, guild_id: int, start: int, end: int) -> list[Occurrence]:
+        """這個伺服器所有提醒在 [start, end) 內的紀錄（含已完成、未完成），給日程表用。"""
+        async with self.conn.execute(
+            f"SELECT {OCCURRENCE_COLUMNS} FROM reminder_occurrences "
+            "WHERE reminder_id IN (SELECT id FROM reminders WHERE guild_id = ?) "
+            "AND due_at >= ? AND due_at < ? ORDER BY due_at, id",
+            (guild_id, start, end),
+        ) as cur:
+            return [Occurrence(*row) for row in await cur.fetchall()]
+
+    async def overdue_occurrences(self, guild_id: int, before: int) -> list[Occurrence]:
+        """期限早於 before 且還沒完成的提醒紀錄。"""
+        async with self.conn.execute(
+            f"SELECT {OCCURRENCE_COLUMNS} FROM reminder_occurrences "
+            "WHERE reminder_id IN (SELECT id FROM reminders WHERE guild_id = ?) "
+            "AND status IN ('pending', 'snoozed') AND due_at < ? ORDER BY due_at, id",
+            (guild_id, before),
         ) as cur:
             return [Occurrence(*row) for row in await cur.fetchall()]
 

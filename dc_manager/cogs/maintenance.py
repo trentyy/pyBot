@@ -30,7 +30,10 @@ HELP_TEXT = """\
 
 **週期提醒**
 `/reminder create` 例：每 2 週提醒 @A儀器組 做校正，可按「完成」或「延期」
+　每月固定：加 `month_day`（每月幾號）或 `nth`+`weekday`（每月第幾個星期幾），單位選「月」
 `/reminder edit|pause|resume|trigger|delete|info|list`
+`/reminder week` 雙週日程：一次看兩週，沒有提醒的日子不顯示
+`/reminder digest set|off|show` 管理員設定每週自動發送日程（沒有提醒就不發）
 `/remindermanager add` 讓某身分組（例如儀器管理人）可建立並管理自己的任務
 
 **儀器警報**

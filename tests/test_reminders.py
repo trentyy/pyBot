@@ -340,3 +340,186 @@ async def test_migration_from_v1(tmp_path):
     s = await db.get_settings(1)
     assert s.log_channel_id == 99 and s.timezone is None
     await db.close()
+
+
+# ---------- /reminder week ----------
+
+
+async def test_week_agenda_embed_flow(env):
+    from datetime import date
+
+    from dc_manager.cogs.reminders import AgendaQuery
+
+    await make_reminder(env)  # 每兩週一 09:00，錨點 11/2
+    me = assignee(env)
+    query = AgendaQuery(guild_id=GUILD_ID, member=me)
+
+    embed = await env.cog.agenda_embed(query, date(2026, 11, 2))
+    assert "11/2 – 11/15" in embed.title
+    assert "A 儀器校正" in embed.description and "⏳ 待辦" in embed.description
+
+    # 只有 11/2 與 11/16 有提醒：換到 11/9 起的兩週只剩 11/16
+    embed = await env.cog.agenda_embed(query, date(2026, 11, 9))
+    assert "週一 11/16" in embed.description and "11/2" not in embed.description.split("11/16")[0]
+
+    # 提醒發出並完成後，顯示為已完成
+    env.clock.set("2026-11-02T09:00")
+    await env.cog.tick()
+    await env.cog.complete(last_occ_id(env), me)
+    embed = await env.cog.agenda_embed(query, date(2026, 11, 2))
+    assert "✅ 已完成" in embed.description
+    assert "已完成 1" in embed.footer.text
+
+
+async def test_week_agenda_filters_and_empty(env):
+    from datetime import date
+
+    from dc_manager.cogs.reminders import AgendaQuery
+
+    await make_reminder(env)
+    stranger = FakeMember(env.guild, 99)
+    mine = await env.cog.agenda_embed(AgendaQuery(GUILD_ID, stranger, mine_only=True), date(2026, 11, 2))
+    assert mine.description == "這兩週沒有提醒。"
+    other_role = await env.cog.agenda_embed(AgendaQuery(GUILD_ID, stranger, role_id=777), date(2026, 11, 2))
+    assert other_role.description == "這兩週沒有提醒。"
+    manager = FakeMember(env.guild, 11, roles=[MANAGER_ROLE])  # 管理者看得到自己管理的任務
+    managed = await env.cog.agenda_embed(AgendaQuery(GUILD_ID, manager, mine_only=True), date(2026, 11, 2))
+    assert "A 儀器校正" in managed.description
+
+
+async def test_week_agenda_overdue_only_on_current_page(env):
+    from datetime import date
+
+    from dc_manager.cogs.reminders import AgendaQuery
+
+    await make_reminder(env, unit="day", count=1, max_postpone=0)
+    env.clock.set("2026-11-02T09:00")
+    await env.cog.tick()  # 11/2 的提醒發出，沒人完成
+    env.clock.set("2026-11-16T10:00")  # 兩週後，本頁是 11/16 起
+    query = AgendaQuery(GUILD_ID, assignee(env))
+    current = await env.cog.agenda_embed(query, date(2026, 11, 16))
+    assert "已逾期" in current.description
+    previous = await env.cog.agenda_embed(query, date(2026, 11, 2))
+    assert "已逾期" not in previous.description
+
+
+# ---------- 每週自動發送 ----------
+
+
+def digests_sent(env):
+    return [m for m in env.guild.channel.sent if m.embed is not None and m.embed.title.startswith("📅")]
+
+
+async def start_digest(env, *, channel_id=CHANNEL_ID):
+    from dc_manager.agenda import previous_send_time
+
+    await env.db.set_digest(GUILD_ID, channel_id, 0, "09:00", previous_send_time(env.clock(), get_zone(TZ), 0, datetime.min.time().replace(hour=9)))
+
+
+async def test_digest_sent_weekly_when_there_are_reminders(env):
+    await make_reminder(env)  # 每兩週一 09:00，錨點 11/2
+    await start_digest(env)
+
+    await env.cog.tick()  # 週一 08:00，還沒到發送時間
+    assert digests_sent(env) == []
+
+    env.clock.set("2026-11-02T09:00")
+    await env.cog.tick()
+    (msg,) = digests_sent(env)
+    assert "11/2 – 11/15" in msg.embed.title and "A 儀器校正" in msg.embed.description
+    await env.cog.tick()  # 同一週不會重複發
+    assert len(digests_sent(env)) == 1
+
+    env.clock.set("2026-11-09T09:00")  # 下週一：兩週內（11/9–11/22）有 11/16 的提醒
+    await env.cog.tick()
+    assert len(digests_sent(env)) == 2
+
+
+async def test_digest_skipped_when_nothing_to_show(env):
+    await start_digest(env)  # 沒有任何提醒任務
+    env.clock.set("2026-11-02T09:00")
+    await env.cog.tick()
+    assert digests_sent(env) == []
+    assert (await env.db.get_digest(GUILD_ID)).last_handled == ts("2026-11-02T09:00")  # 視為處理過，不會重複檢查
+
+    # 兩週內沒有提醒（下一次在更後面）也不發
+    await make_reminder(env, unit="month", count=3, anchor="2027-02-01T09:00")
+    env.clock.set("2026-11-09T09:00")
+    await env.cog.tick()
+    assert digests_sent(env) == []
+
+
+async def test_digest_not_backfilled_after_long_downtime(env):
+    await make_reminder(env, unit="day", count=1)
+    await start_digest(env)
+    env.clock.set("2026-11-02T22:30")  # 錯過 09:00 超過 12 小時
+    await env.cog.digest_tick()
+    assert digests_sent(env) == []
+    # 但 12 小時內開機會補發
+    await env.db.set_digest(GUILD_ID, CHANNEL_ID, 0, "09:00", ts("2026-10-26T09:00"))
+    env.clock.set("2026-11-02T15:00")
+    await env.cog.digest_tick()
+    assert len(digests_sent(env)) == 1
+
+
+async def test_digest_missing_channel_is_marked_handled(env):
+    await make_reminder(env, unit="day", count=1)
+    await start_digest(env, channel_id=999)
+    env.clock.set("2026-11-02T09:00")
+    await env.cog.digest_tick()
+    assert digests_sent(env) == []
+    assert (await env.db.get_digest(GUILD_ID)).last_handled == ts("2026-11-02T09:00")
+
+
+async def test_digest_retries_after_transient_error(env):
+    await make_reminder(env, unit="day", count=1)
+    await start_digest(env)
+    env.clock.set("2026-11-02T09:00")
+    env.guild.channel.fail = discord.HTTPException(SimpleNamespace(status=500, reason="x"), "boom")
+    await env.cog.digest_tick()
+    assert digests_sent(env) == []
+    assert (await env.db.get_digest(GUILD_ID)).last_handled != ts("2026-11-02T09:00")  # 還沒處理完
+    env.guild.channel.fail = None
+    await env.cog.digest_tick()  # 重試時間未到
+    assert digests_sent(env) == []
+    env.clock.set("2026-11-02T09:06")
+    await env.cog.digest_tick()
+    assert len(digests_sent(env)) == 1
+
+
+class FakeResponse2:
+    def __init__(self):
+        self.done = False
+        self.texts: list[str] = []
+
+    def is_done(self):
+        return self.done
+
+    async def send_message(self, text=None, **k):
+        self.done = True
+        self.texts.append(text)
+
+
+async def test_digest_set_command_permissions_and_state(env):
+    perms = discord.Permissions(view_channel=True, send_messages=True, embed_links=True)
+    channel = SimpleNamespace(id=CHANNEL_ID, mention="<#2>", permissions_for=lambda me: perms)
+
+    def interaction(member):
+        return SimpleNamespace(
+            guild_id=GUILD_ID, guild=SimpleNamespace(me=None), user=member, response=FakeResponse2()
+        )
+
+    with pytest.raises(UserError):  # 非管理員
+        await env.cog.digest_set.callback(env.cog, interaction(FakeMember(env.guild, 5)), channel, None, "09:00")
+
+    inter = interaction(FakeMember(env.guild, 1, admin=True))
+    with pytest.raises(UserError):  # 時間格式錯誤
+        await env.cog.digest_set.callback(env.cog, inter, channel, None, "9點")
+    await env.cog.digest_set.callback(env.cog, inter, channel, None, "09:00")
+    d = await env.db.get_digest(GUILD_ID)
+    assert (d.channel_id, d.weekday, d.at_time) == (CHANNEL_ID, 0, "09:00")
+    assert d.last_handled == ts("2026-10-26T09:00")  # 過去的預定時間視為處理過，不會設定完馬上發
+    assert "沒有提醒就不發" in inter.response.texts[-1]
+
+    await env.cog.digest_off.callback(env.cog, interaction(FakeMember(env.guild, 1, admin=True)))
+    assert await env.db.get_digest(GUILD_ID) is None

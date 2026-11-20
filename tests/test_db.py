@@ -96,3 +96,23 @@ async def test_kv(db):
     await db.set_kv("k", "v1")
     await db.set_kv("k", "v2")
     assert await db.get_kv("k") == "v2"
+
+
+async def test_digest_settings_lifecycle(db):
+    assert await db.get_digest(1) is None
+    await db.set_digest(1, 50, 0, "09:00", 1000)
+    d = await db.get_digest(1)
+    assert (d.channel_id, d.weekday, d.at_time, d.last_handled) == (50, 0, "09:00", 1000)
+    await db.set_digest(1, 51, 4, "17:30", None)  # 重新設定會覆蓋
+    assert (await db.get_digest(1)).channel_id == 51
+    await db.mark_digest(1, 2000)
+    assert (await db.get_digest(1)).last_handled == 2000
+    assert [x.guild_id for x in await db.all_digests()] == [1]
+    assert await db.remove_digest(1) is True
+    assert await db.remove_digest(1) is False
+
+
+async def test_delete_guild_removes_digest(db):
+    await db.set_digest(1, 50, 0, "09:00", None)
+    await db.delete_guild(1)
+    assert await db.get_digest(1) is None
